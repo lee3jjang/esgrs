@@ -1199,7 +1199,7 @@ fn main() {
 
         // 3.8. Update
         alpha += dalpha*lr;
-        alpha = alpha.max(0.001);
+        alpha = alpha.max(0.0001);
         sigma1 += dsigma1*lr;
         sigma2 += dsigma2*lr;
         sigma3 += dsigma3*lr;

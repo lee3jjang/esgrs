@@ -103,7 +103,6 @@ impl Vr {
         };
         return out;
     }
-    #[allow(dead_code)]
     pub fn backward(&self, dout: f64) -> (f64, f64, f64, f64, f64, f64, f64) {
         let (dalpha, dsigma1, dsigma2, dsigma3, dsigma5, dsigma7, dsigma10) = if self.t == 1.0 {
             let dalpha = -self.sigma1*self.sigma1/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*self.t).exp()-(2.0*self.alpha*0.0).exp()) + self.sigma1*self.sigma1/self.alpha*(self.t*(2.0*self.t*self.alpha).exp()-0.0*(2.0*0.0*self.alpha).exp());
@@ -269,10 +268,20 @@ impl RstarT1 {
         self.out = JamshidianT1 { a: self.a, b: self.b, k: self.k }.gss(0.0, 1.0);
         return self.out;
     }
-    #[allow(dead_code)]
     pub fn backward(&self, dout: f64) -> ([f64; 4], [f64; 4]) {
-        let da = [1.0; 4];
-        let db = [1.0; 4];
+        let mut da = [0.0; 4];
+        let mut db = [0.0; 4];
+        let num = 4;
+        let mut denom = 0.0;
+        for i in 0..num {
+            let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
+            denom += ci*(self.a[i]-self.b[i]*self.out).exp()*self.b[i];
+        }
+        for i in 0..num {
+            let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
+            da[i] = ci*(self.a[i]-self.b[i]*self.out).exp()/denom*dout;
+            db[i] = -ci*(self.a[i]-self.b[i]*self.out).exp()*self.out/denom*dout;
+        }
         return (da, db);
     }
 }
@@ -313,10 +322,20 @@ impl RstarT2 {
         self.out = JamshidianT2 { a: self.a, b: self.b, k: self.k }.gss(0.0, 1.0);
         return self.out;
     }
-    #[allow(dead_code)]
     pub fn backward(&self, dout: f64) -> ([f64; 8], [f64; 8]) {
-        let da = [1.0; 8];
-        let db = [1.0; 8];
+        let mut da = [0.0; 8];
+        let mut db = [0.0; 8];
+        let num = 8;
+        let mut denom = 0.0;
+        for i in 0..num {
+            let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
+            denom += ci*(self.a[i]-self.b[i]*self.out).exp()*self.b[i];
+        }
+        for i in 0..num {
+            let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
+            da[i] = ci*(self.a[i]-self.b[i]*self.out).exp()/denom*dout;
+            db[i] = -ci*(self.a[i]-self.b[i]*self.out).exp()*self.out/denom*dout;
+        }
         return (da, db);
     }
 }
@@ -357,10 +376,20 @@ impl RstarT3 {
         self.out = JamshidianT3 { a: self.a, b: self.b, k: self.k }.gss(0.0, 1.0);
         return self.out;
     }
-    #[allow(dead_code)]
     pub fn backward(&self, dout: f64) -> ([f64; 12], [f64; 12]) {
-        let da = [1.0; 12];
-        let db = [1.0; 12];
+        let mut da = [0.0; 12];
+        let mut db = [0.0; 12];
+        let num = 12;
+        let mut denom = 0.0;
+        for i in 0..num {
+            let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
+            denom += ci*(self.a[i]-self.b[i]*self.out).exp()*self.b[i];
+        }
+        for i in 0..num {
+            let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
+            da[i] = ci*(self.a[i]-self.b[i]*self.out).exp()/denom*dout;
+            db[i] = -ci*(self.a[i]-self.b[i]*self.out).exp()*self.out/denom*dout;
+        }
         return (da, db);
     }
 }
@@ -401,10 +430,20 @@ impl RstarT5 {
         self.out = JamshidianT5 { a: self.a, b: self.b, k: self.k }.gss(0.0, 1.0);
         return self.out;
     }
-    #[allow(dead_code)]
     pub fn backward(&self, dout: f64) -> ([f64; 20], [f64; 20]) {
-        let da = [1.0; 20];
-        let db = [1.0; 20];
+        let mut da = [0.0; 20];
+        let mut db = [0.0; 20];
+        let num = 20;
+        let mut denom = 0.0;
+        for i in 0..num {
+            let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
+            denom += ci*(self.a[i]-self.b[i]*self.out).exp()*self.b[i];
+        }
+        for i in 0..num {
+            let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
+            da[i] = ci*(self.a[i]-self.b[i]*self.out).exp()/denom*dout;
+            db[i] = -ci*(self.a[i]-self.b[i]*self.out).exp()*self.out/denom*dout;
+        }
         return (da, db);
     }
 }
@@ -447,8 +486,19 @@ impl RstarT7 {
     }
     #[allow(dead_code)]
     pub fn backward(&self, dout: f64) -> ([f64; 28], [f64; 28]) {
-        let da = [1.0; 28];
-        let db = [1.0; 28];
+        let mut da = [0.0; 28];
+        let mut db = [0.0; 28];
+        let num = 28;
+        let mut denom = 0.0;
+        for i in 0..num {
+            let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
+            denom += ci*(self.a[i]-self.b[i]*self.out).exp()*self.b[i];
+        }
+        for i in 0..num {
+            let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
+            da[i] = ci*(self.a[i]-self.b[i]*self.out).exp()/denom*dout;
+            db[i] = -ci*(self.a[i]-self.b[i]*self.out).exp()*self.out/denom*dout;
+        }
         return (da, db);
     }
 }
@@ -489,10 +539,20 @@ impl RstarT10 {
         self.out = JamshidianT10 { a: self.a, b: self.b, k: self.k }.gss(0.0, 1.0);
         return self.out;
     }
-    #[allow(dead_code)]
     pub fn backward(&self, dout: f64) -> ([f64; 40], [f64; 40]) {
-        let da = [1.0; 40];
-        let db = [1.0; 40];
+        let mut da = [0.0; 40];
+        let mut db = [0.0; 40];
+        let num = 40;
+        let mut denom = 0.0;
+        for i in 0..num {
+            let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
+            denom += ci*(self.a[i]-self.b[i]*self.out).exp()*self.b[i];
+        }
+        for i in 0..num {
+            let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
+            da[i] = ci*(self.a[i]-self.b[i]*self.out).exp()/denom*dout;
+            db[i] = -ci*(self.a[i]-self.b[i]*self.out).exp()*self.out/denom*dout;
+        }
         return (da, db);
     }
 }
@@ -842,7 +902,7 @@ impl MRSE {
         let mut dpswaption = [[0.0; 6]; 6];
         for i in 0..6 {
             for j in 0..6 {
-                dpswaption[i][j] = -2.0*(1.0-self.pswaption[i][j]/self.pswaption_mkt[i][j])/self.pswaption_mkt[i][j]/36.0;
+                dpswaption[i][j] = -2.0*(1.0-self.pswaption[i][j]/self.pswaption_mkt[i][j])/self.pswaption_mkt[i][j]/36.0*dout;
             }
         }
         return dpswaption;

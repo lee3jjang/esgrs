@@ -32,6 +32,14 @@ fn main() {
         (ts.p[(12.0*t) as usize]-ts.p[(12.0*(t+tenor)) as usize])/denom
     }
 
+    use esgrs::stats::norm_cdf;
+    fn pswaption_black(mat: f64, tenor: f64, black_vol: f64, ts: TermStructure) -> f64 {
+        let term1 = ts.p[(12.0*mat) as usize] - ts.p[(12.0*(mat+tenor)) as usize];
+        let d1 = 0.5*black_vol*f64::sqrt(mat);
+        let cum_prob = norm_cdf(d1);
+        return term1*(2.0*cum_prob-1.0);
+    }
+
     let mut alpha = 0.01;
     let mut sigma1 = 0.05678634922061772;
     let mut sigma2 = 0.017468393951637483;

@@ -99,19 +99,85 @@ impl Vr {
             + sigma7*sigma7/2.0/alpha*((2.0*alpha*7.0).exp()-(2.0*alpha*5.0).exp())
             + sigma10*sigma10/2.0/alpha*((2.0*alpha*self.t).exp()-(2.0*alpha*7.0).exp())
         } else {
-            panic!("Vr domain error");
+            panic!("Vr(t) domain error");
         };
         return out;
     }
     #[allow(dead_code)]
     pub fn backward(&self, dout: f64) -> (f64, f64, f64, f64, f64, f64, f64) {
-        let dalpha = 1.0;
-        let dsigma1 = 1.0;
-        let dsigma2 = 1.0;
-        let dsigma3 = 1.0;
-        let dsigma5 = 1.0;
-        let dsigma7 = 1.0;
-        let dsigma10 = 1.0;
+        let (dalpha, dsigma1, dsigma2, dsigma3, dsigma5, dsigma7, dsigma10) = if self.t == 1.0 {
+            let dalpha = -self.sigma1*self.sigma1/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*self.t).exp()-(2.0*self.alpha*0.0).exp()) + self.sigma1*self.sigma1/self.alpha*(self.t*(2.0*self.t*self.alpha).exp()-0.0*(2.0*0.0*self.alpha).exp());
+            let dsigma1 = self.sigma1/self.alpha*((2.0*self.alpha*self.t).exp()-(2.0*self.alpha*0.0).exp());
+            let dsigma2 = 0.0;
+            let dsigma3 = 0.0;
+            let dsigma5 = 0.0;
+            let dsigma7 = 0.0;
+            let dsigma10 = 0.0;
+            (dalpha*dout, dsigma1*dout, dsigma2*dout, dsigma3*dout, dsigma5*dout, dsigma7*dout, dsigma10*dout)
+        } else if self.t == 2.0 {
+            let dalpha = -self.sigma1*self.sigma1/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp()) + self.sigma1*self.sigma1/self.alpha*(1.0*(2.0*1.0*self.alpha).exp()-0.0*(2.0*0.0*self.alpha).exp())
+            -self.sigma2*self.sigma2/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*self.t).exp()-(2.0*self.alpha*1.0).exp()) + self.sigma2*self.sigma2/self.alpha*(self.t*(2.0*self.t*self.alpha).exp()-1.0*(2.0*1.0*self.alpha).exp());
+            let dsigma1 = self.sigma1/self.alpha*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp());
+            let dsigma2 = self.sigma2/self.alpha*((2.0*self.alpha*self.t).exp()-(2.0*self.alpha*1.0).exp());
+            let dsigma3 = 0.0;
+            let dsigma5 = 0.0;
+            let dsigma7 = 0.0;
+            let dsigma10 = 0.0;
+            (dalpha*dout, dsigma1*dout, dsigma2*dout, dsigma3*dout, dsigma5*dout, dsigma7*dout, dsigma10*dout)
+        } else if self.t == 3.0 {
+            let dalpha = -self.sigma1*self.sigma1/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp()) + self.sigma1*self.sigma1/self.alpha*(1.0*(2.0*1.0*self.alpha).exp()-0.0*(2.0*0.0*self.alpha).exp())
+            -self.sigma2*self.sigma2/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp()) + self.sigma2*self.sigma2/self.alpha*(2.0*(2.0*2.0*self.alpha).exp()-1.0*(2.0*1.0*self.alpha).exp())
+            -self.sigma3*self.sigma3/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*self.t).exp()-(2.0*self.alpha*2.0).exp()) + self.sigma3*self.sigma3/self.alpha*(self.t*(2.0*self.t*self.alpha).exp()-2.0*(2.0*2.0*self.alpha).exp());
+            let dsigma1 = self.sigma1/self.alpha*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp());
+            let dsigma2 = self.sigma2/self.alpha*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp());
+            let dsigma3 = self.sigma3/self.alpha*((2.0*self.alpha*self.t).exp()-(2.0*self.alpha*2.0).exp());
+            let dsigma5 = 0.0;
+            let dsigma7 = 0.0;
+            let dsigma10 = 0.0;
+            (dalpha*dout, dsigma1*dout, dsigma2*dout, dsigma3*dout, dsigma5*dout, dsigma7*dout, dsigma10*dout)
+        } else if self.t == 5.0 {
+            let dalpha = -self.sigma1*self.sigma1/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp()) + self.sigma1*self.sigma1/self.alpha*(1.0*(2.0*1.0*self.alpha).exp()-0.0*(2.0*0.0*self.alpha).exp())
+            -self.sigma2*self.sigma2/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp()) + self.sigma2*self.sigma2/self.alpha*(2.0*(2.0*2.0*self.alpha).exp()-1.0*(2.0*1.0*self.alpha).exp())
+            -self.sigma3*self.sigma3/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*3.0).exp()-(2.0*self.alpha*2.0).exp()) + self.sigma3*self.sigma3/self.alpha*(3.0*(2.0*3.0*self.alpha).exp()-2.0*(2.0*2.0*self.alpha).exp())
+            -self.sigma5*self.sigma5/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*self.t).exp()-(2.0*self.alpha*3.0).exp()) + self.sigma5*self.sigma5/self.alpha*(self.t*(2.0*self.t*self.alpha).exp()-3.0*(2.0*3.0*self.alpha).exp());
+            let dsigma1 = self.sigma1/self.alpha*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp());
+            let dsigma2 = self.sigma2/self.alpha*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp());
+            let dsigma3 = self.sigma3/self.alpha*((2.0*self.alpha*3.0).exp()-(2.0*self.alpha*2.0).exp());
+            let dsigma5 = self.sigma5/self.alpha*((2.0*self.alpha*self.t).exp()-(2.0*self.alpha*3.0).exp());
+            let dsigma7 = 0.0;
+            let dsigma10 = 0.0;
+            (dalpha*dout, dsigma1*dout, dsigma2*dout, dsigma3*dout, dsigma5*dout, dsigma7*dout, dsigma10*dout)
+        } else if self.t == 7.0 {
+            let dalpha = -self.sigma1*self.sigma1/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp()) + self.sigma1*self.sigma1/self.alpha*(1.0*(2.0*1.0*self.alpha).exp()-0.0*(2.0*0.0*self.alpha).exp())
+            -self.sigma2*self.sigma2/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp()) + self.sigma2*self.sigma2/self.alpha*(2.0*(2.0*2.0*self.alpha).exp()-1.0*(2.0*1.0*self.alpha).exp())
+            -self.sigma3*self.sigma3/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*3.0).exp()-(2.0*self.alpha*2.0).exp()) + self.sigma3*self.sigma3/self.alpha*(3.0*(2.0*3.0*self.alpha).exp()-2.0*(2.0*2.0*self.alpha).exp())
+            -self.sigma5*self.sigma5/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*5.0).exp()-(2.0*self.alpha*3.0).exp()) + self.sigma5*self.sigma5/self.alpha*(5.0*(2.0*5.0*self.alpha).exp()-3.0*(2.0*3.0*self.alpha).exp())
+            -self.sigma7*self.sigma7/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*self.t).exp()-(2.0*self.alpha*5.0).exp()) + self.sigma7*self.sigma7/self.alpha*(self.t*(2.0*self.t*self.alpha).exp()-5.0*(2.0*5.0*self.alpha).exp());
+            let dsigma1 = self.sigma1/self.alpha*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp());
+            let dsigma2 = self.sigma2/self.alpha*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp());
+            let dsigma3 = self.sigma3/self.alpha*((2.0*self.alpha*3.0).exp()-(2.0*self.alpha*2.0).exp());
+            let dsigma5 = self.sigma5/self.alpha*((2.0*self.alpha*5.0).exp()-(2.0*self.alpha*3.0).exp());
+            let dsigma7 = self.sigma7/self.alpha*((2.0*self.alpha*self.t).exp()-(2.0*self.alpha*5.0).exp());
+            let dsigma10 = 0.0;
+            (dalpha*dout, dsigma1*dout, dsigma2*dout, dsigma3*dout, dsigma5*dout, dsigma7*dout, dsigma10*dout)
+        } else if self.t == 10.0 {
+            let dalpha = -self.sigma1*self.sigma1/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp()) + self.sigma1*self.sigma1/self.alpha*(1.0*(2.0*1.0*self.alpha).exp()-0.0*(2.0*0.0*self.alpha).exp())
+            -self.sigma2*self.sigma2/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp()) + self.sigma2*self.sigma2/self.alpha*(2.0*(2.0*2.0*self.alpha).exp()-1.0*(2.0*1.0*self.alpha).exp())
+            -self.sigma3*self.sigma3/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*3.0).exp()-(2.0*self.alpha*2.0).exp()) + self.sigma3*self.sigma3/self.alpha*(3.0*(2.0*3.0*self.alpha).exp()-2.0*(2.0*2.0*self.alpha).exp())
+            -self.sigma5*self.sigma5/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*5.0).exp()-(2.0*self.alpha*3.0).exp()) + self.sigma5*self.sigma5/self.alpha*(5.0*(2.0*5.0*self.alpha).exp()-3.0*(2.0*3.0*self.alpha).exp())
+            -self.sigma7*self.sigma7/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*7.0).exp()-(2.0*self.alpha*5.0).exp()) + self.sigma7*self.sigma7/self.alpha*(7.0*(2.0*7.0*self.alpha).exp()-5.0*(2.0*5.0*self.alpha).exp())
+            -self.sigma10*self.sigma10/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*self.t).exp()-(2.0*self.alpha*7.0).exp()) + self.sigma10*self.sigma10/self.alpha*(self.t*(2.0*self.t*self.alpha).exp()-7.0*(2.0*7.0*self.alpha).exp());
+            let dsigma1 = self.sigma1/self.alpha*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp());
+            let dsigma2 = self.sigma2/self.alpha*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp());
+            let dsigma3 = self.sigma3/self.alpha*((2.0*self.alpha*3.0).exp()-(2.0*self.alpha*2.0).exp());
+            let dsigma5 = self.sigma5/self.alpha*((2.0*self.alpha*5.0).exp()-(2.0*self.alpha*3.0).exp());
+            let dsigma7 = self.sigma7/self.alpha*((2.0*self.alpha*7.0).exp()-(2.0*self.alpha*5.0).exp());
+            let dsigma10 = self.sigma10/self.alpha*((2.0*self.alpha*self.t).exp()-(2.0*self.alpha*7.0).exp());
+            (dalpha*dout, dsigma1*dout, dsigma2*dout, dsigma3*dout, dsigma5*dout, dsigma7*dout, dsigma10*dout)
+        } else {
+            panic!("Vr(t) domain error");
+        };
+
         return (dalpha, dsigma1, dsigma2, dsigma3, dsigma5, dsigma7, dsigma10);
     }
 }

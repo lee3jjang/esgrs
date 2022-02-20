@@ -1,5 +1,5 @@
 use crate::optim::UniFn;
-use crate::stats::norm_cdf;
+use crate::stats::{norm_cdf, norm_pdf};
 
 #[derive(Debug, Copy, Clone)]
 pub struct TermStructure {
@@ -70,7 +70,15 @@ impl Vr {
     pub fn new(t: f64) -> Self {
         return Vr { alpha: f64::NAN, sigma1: f64::NAN, sigma2: f64::NAN, sigma3: f64::NAN, sigma5: f64::NAN, sigma7: f64::NAN, sigma10: f64::NAN, t: t };
     }
-    pub fn forward(&self, alpha: f64, sigma1: f64, sigma2: f64, sigma3: f64, sigma5: f64, sigma7: f64, sigma10: f64) -> f64 {
+    pub fn forward(&mut self, alpha: f64, sigma1: f64, sigma2: f64, sigma3: f64, sigma5: f64, sigma7: f64, sigma10: f64) -> f64 {
+        self.alpha = alpha;
+        self.sigma1 = sigma1;
+        self.sigma2 = sigma2;
+        self.sigma3 = sigma3;
+        self.sigma5 = sigma5;
+        self.sigma7 = sigma7;
+        self.sigma10 = sigma10;
+
         let out = if self.t == 1.0 {
             sigma1*sigma1/2.0/alpha*((2.0*alpha*self.t).exp()-(2.0*alpha*0.0).exp())
         } else if self.t == 2.0 {
@@ -584,6 +592,9 @@ pub struct PSwaptionT1 {
     k: f64,
     p_tf: f64,
     p_ti: [f64; 4],
+    x: [f64; 4],
+    dplus: [f64; 4],
+    dminus: [f64; 4],
 }
 
 impl PSwaptionT1 {
@@ -594,7 +605,7 @@ impl PSwaptionT1 {
         for i in 0..num {
             p_ti[i] = ts.p[(12.0*t) as usize + i + 1];
         } 
-        PSwaptionT1 { a: [f64::NAN; 4], b: [f64::NAN; 4], vp: [f64::NAN; 4], rstar: f64::NAN, k: k, p_tf: p_tf, p_ti: p_ti }
+        PSwaptionT1 { a: [f64::NAN; 4], b: [f64::NAN; 4], vp: [f64::NAN; 4], rstar: f64::NAN, k: k, p_tf: p_tf, p_ti: p_ti, x: [f64::NAN; 4], dplus: [f64::NAN; 4], dminus: [f64::NAN; 4] }
     }
     pub fn forward(&mut self, a: [f64; 4], b: [f64; 4], vp: [f64; 4], rstar: f64) -> f64 {
         self.a = a;
@@ -605,22 +616,42 @@ impl PSwaptionT1 {
         let mut out = 0.0;
         let num = 4;
         for i in 0..num {
-            let xi = (a[i]-b[i]*rstar).exp();
+            self.x[i] = (a[i]-b[i]*rstar).exp();
             let ci = if i == num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
-            let dplusi = (self.p_tf/self.p_ti[i]*xi).ln()/vp[i].sqrt() + 0.5*vp[i].sqrt();
-            let dminusi = dplusi - vp[i].sqrt();
-            let zbp = xi*self.p_tf*norm_cdf(dplusi) - self.p_ti[i]*norm_cdf(dminusi);
+            self.dplus[i] = (self.p_tf/self.p_ti[i]*self.x[i]).ln()/vp[i].sqrt() + 0.5*vp[i].sqrt();
+            self.dminus[i] = self.dplus[i] - vp[i].sqrt();
+            let zbp = self.x[i]*self.p_tf*norm_cdf(self.dplus[i]) - self.p_ti[i]*norm_cdf(self.dminus[i]);
             out += ci*zbp;
         }
-
+        
         return out;
     }
-    #[allow(dead_code)]
     pub fn backward(&self, dout: f64) -> ([f64; 4], [f64; 4], [f64; 4], f64) {
-        let da = [1.0; 4];
-        let db = [1.0; 4];
-        let dvp = [1.0; 4];
-        let drstar = 1.0;
+        let mut da = [0.0; 4];
+        let mut db = [0.0; 4];
+        let mut dvp = [0.0; 4];
+        let mut drstar = 0.0;
+        
+        let num = 4;
+        for i in 0..num {
+            let ci = if i == num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
+            let tmp = ci*self.p_tf*norm_cdf(self.dplus[i])*dout;
+            da[i] += tmp*self.x[i];
+            db[i] += -tmp*self.x[i]*self.rstar;
+            drstar += -tmp*self.x[i]*self.b[i];
+            
+            let tmp = self.x[i]*self.p_tf*norm_pdf(self.dplus[i])*dout;
+            da[i] += tmp/self.vp[i].sqrt();
+            db[i] += -tmp*self.rstar/self.vp[i].sqrt();
+            drstar += -tmp*self.b[i]/self.vp[i].sqrt();
+            dvp[i] += -tmp*(0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()*self.vp[i].powf(-1.5)+0.25*self.vp[i].powf(-0.5));
+
+            let tmp = self.p_ti[i]*norm_pdf(self.dminus[i])*dout;
+            da[i] += tmp/self.vp[i].sqrt();
+            db[i] += -tmp*self.rstar/self.vp[i].sqrt();
+            drstar += -tmp*self.b[i]/self.vp[i].sqrt();
+            dvp[i] += -tmp*(0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()*self.vp[i].powf(-1.5)-0.25*self.vp[i].powf(-0.5));
+        }
         return (da, db, dvp, drstar);
     }
 }
@@ -634,6 +665,9 @@ pub struct PSwaptionT2 {
     k: f64,
     p_tf: f64,
     p_ti: [f64; 8],
+    x: [f64; 8],
+    dplus: [f64; 8],
+    dminus: [f64; 8],
 }
 
 impl PSwaptionT2 {
@@ -644,7 +678,7 @@ impl PSwaptionT2 {
         for i in 0..num {
             p_ti[i] = ts.p[(12.0*t) as usize + i + 1];
         } 
-        PSwaptionT2 { a: [f64::NAN; 8], b: [f64::NAN; 8], vp: [f64::NAN; 8], rstar: f64::NAN, k: k, p_tf: p_tf, p_ti: p_ti }
+        PSwaptionT2 { a: [f64::NAN; 8], b: [f64::NAN; 8], vp: [f64::NAN; 8], rstar: f64::NAN, k: k, p_tf: p_tf, p_ti: p_ti, x: [f64::NAN; 8], dplus: [f64::NAN; 8], dminus: [f64::NAN; 8] }
     }
     pub fn forward(&mut self, a: [f64; 8], b: [f64; 8], vp: [f64; 8], rstar: f64) -> f64 {
         self.a = a;
@@ -655,22 +689,43 @@ impl PSwaptionT2 {
         let mut out = 0.0;
         let num = 8;
         for i in 0..num {
-            let xi = (a[i]-b[i]*rstar).exp();
+            self.x[i] = (a[i]-b[i]*rstar).exp();
             let ci = if i == num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
-            let dplusi = (self.p_tf/self.p_ti[i]*xi).ln()/vp[i].sqrt() + 0.5*vp[i].sqrt();
-            let dminusi = dplusi - vp[i].sqrt();
-            let zbp = xi*self.p_tf*norm_cdf(dplusi) - self.p_ti[i]*norm_cdf(dminusi);
+            self.dplus[i] = (self.p_tf/self.p_ti[i]*self.x[i]).ln()/vp[i].sqrt() + 0.5*vp[i].sqrt();
+            self.dminus[i] = self.dplus[i] - vp[i].sqrt();
+            let zbp = self.x[i]*self.p_tf*norm_cdf(self.dplus[i]) - self.p_ti[i]*norm_cdf(self.dminus[i]);
             out += ci*zbp;
         }
 
         return out;
     }
-    #[allow(dead_code)]
     pub fn backward(&self, dout: f64) -> ([f64; 8], [f64; 8], [f64; 8], f64) {
-        let da = [1.0; 8];
-        let db = [1.0; 8];
-        let dvp = [1.0; 8];
-        let drstar = 1.0;
+        let mut da = [0.0; 8];
+        let mut db = [0.0; 8];
+        let mut dvp = [0.0; 8];
+        let mut drstar = 0.0;
+        
+        let num = 8;
+        for i in 0..num {
+            let ci = if i == num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
+            let tmp = ci*self.p_tf*norm_cdf(self.dplus[i])*dout;
+            da[i] += tmp*self.x[i];
+            db[i] += -tmp*self.x[i]*self.rstar;
+            drstar += -tmp*self.x[i]*self.b[i];
+            
+            let tmp = self.x[i]*self.p_tf*norm_pdf(self.dplus[i])*dout;
+            da[i] += tmp/self.vp[i].sqrt();
+            db[i] += -tmp*self.rstar/self.vp[i].sqrt();
+            drstar += -tmp*self.b[i]/self.vp[i].sqrt();
+            dvp[i] += -tmp*(0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()*self.vp[i].powf(-1.5)+0.25*self.vp[i].powf(-0.5));
+
+            let tmp = self.p_ti[i]*norm_pdf(self.dminus[i])*dout;
+            da[i] += tmp/self.vp[i].sqrt();
+            db[i] += -tmp*self.rstar/self.vp[i].sqrt();
+            drstar += -tmp*self.b[i]/self.vp[i].sqrt();
+            dvp[i] += -tmp*(0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()*self.vp[i].powf(-1.5)-0.25*self.vp[i].powf(-0.5));
+        }
+        
         return (da, db, dvp, drstar);
     }
 }
@@ -684,6 +739,9 @@ pub struct PSwaptionT3 {
     k: f64,
     p_tf: f64,
     p_ti: [f64; 12],
+    x: [f64; 12],
+    dplus: [f64; 12],
+    dminus: [f64; 12],
 }
 
 impl PSwaptionT3 {
@@ -694,7 +752,7 @@ impl PSwaptionT3 {
         for i in 0..num {
             p_ti[i] = ts.p[(12.0*t) as usize + i + 1];
         } 
-        PSwaptionT3 { a: [f64::NAN; 12], b: [f64::NAN; 12], vp: [f64::NAN; 12], rstar: f64::NAN, k: k, p_tf: p_tf, p_ti: p_ti }
+        PSwaptionT3 { a: [f64::NAN; 12], b: [f64::NAN; 12], vp: [f64::NAN; 12], rstar: f64::NAN, k: k, p_tf: p_tf, p_ti: p_ti, x: [f64::NAN; 12], dplus: [f64::NAN; 12], dminus: [f64::NAN; 12] }
     }
     pub fn forward(&mut self, a: [f64; 12], b: [f64; 12], vp: [f64; 12], rstar: f64) -> f64 {
         self.a = a;
@@ -705,22 +763,42 @@ impl PSwaptionT3 {
         let mut out = 0.0;
         let num = 12;
         for i in 0..num {
-            let xi = (a[i]-b[i]*rstar).exp();
+            self.x[i] = (a[i]-b[i]*rstar).exp();
             let ci = if i == num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
-            let dplusi = (self.p_tf/self.p_ti[i]*xi).ln()/vp[i].sqrt() + 0.5*vp[i].sqrt();
-            let dminusi = dplusi - vp[i].sqrt();
-            let zbp = xi*self.p_tf*norm_cdf(dplusi) - self.p_ti[i]*norm_cdf(dminusi);
+            self.dplus[i] = (self.p_tf/self.p_ti[i]*self.x[i]).ln()/vp[i].sqrt() + 0.5*vp[i].sqrt();
+            self.dminus[i] = self.dplus[i] - vp[i].sqrt();
+            let zbp = self.x[i]*self.p_tf*norm_cdf(self.dplus[i]) - self.p_ti[i]*norm_cdf(self.dminus[i]);
             out += ci*zbp;
         }
 
         return out;
     }
-    #[allow(dead_code)]
     pub fn backward(&self, dout: f64) -> ([f64; 12], [f64; 12], [f64; 12], f64) {
-        let da = [1.0; 12];
-        let db = [1.0; 12];
-        let dvp = [1.0; 12];
-        let drstar = 1.0;
+        let mut da = [0.0; 12];
+        let mut db = [0.0; 12];
+        let mut dvp = [0.0; 12];
+        let mut drstar = 0.0;
+        
+        let num = 12;
+        for i in 0..num {
+            let ci = if i == num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
+            let tmp = ci*self.p_tf*norm_cdf(self.dplus[i])*dout;
+            da[i] += tmp*self.x[i];
+            db[i] += -tmp*self.x[i]*self.rstar;
+            drstar += -tmp*self.x[i]*self.b[i];
+            
+            let tmp = self.x[i]*self.p_tf*norm_pdf(self.dplus[i])*dout;
+            da[i] += tmp/self.vp[i].sqrt();
+            db[i] += -tmp*self.rstar/self.vp[i].sqrt();
+            drstar += -tmp*self.b[i]/self.vp[i].sqrt();
+            dvp[i] += -tmp*(0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()*self.vp[i].powf(-1.5)+0.25*self.vp[i].powf(-0.5));
+
+            let tmp = self.p_ti[i]*norm_pdf(self.dminus[i])*dout;
+            da[i] += tmp/self.vp[i].sqrt();
+            db[i] += -tmp*self.rstar/self.vp[i].sqrt();
+            drstar += -tmp*self.b[i]/self.vp[i].sqrt();
+            dvp[i] += -tmp*(0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()*self.vp[i].powf(-1.5)-0.25*self.vp[i].powf(-0.5));
+        }
         return (da, db, dvp, drstar);
     }
 }
@@ -734,6 +812,9 @@ pub struct PSwaptionT5 {
     k: f64,
     p_tf: f64,
     p_ti: [f64; 20],
+    x: [f64; 20],
+    dplus: [f64; 20],
+    dminus: [f64; 20],
 }
 
 impl PSwaptionT5 {
@@ -744,7 +825,7 @@ impl PSwaptionT5 {
         for i in 0..num {
             p_ti[i] = ts.p[(12.0*t) as usize + i + 1];
         } 
-        PSwaptionT5 { a: [f64::NAN; 20], b: [f64::NAN; 20], vp: [f64::NAN; 20], rstar: f64::NAN, k: k, p_tf: p_tf, p_ti: p_ti }
+        PSwaptionT5 { a: [f64::NAN; 20], b: [f64::NAN; 20], vp: [f64::NAN; 20], rstar: f64::NAN, k: k, p_tf: p_tf, p_ti: p_ti, x: [f64::NAN; 20], dplus: [f64::NAN; 20], dminus: [f64::NAN; 20] }
     }
     pub fn forward(&mut self, a: [f64; 20], b: [f64; 20], vp: [f64; 20], rstar: f64) -> f64 {
         self.a = a;
@@ -755,22 +836,42 @@ impl PSwaptionT5 {
         let mut out = 0.0;
         let num = 20;
         for i in 0..num {
-            let xi = (a[i]-b[i]*rstar).exp();
+            self.x[i] = (a[i]-b[i]*rstar).exp();
             let ci = if i == num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
-            let dplusi = (self.p_tf/self.p_ti[i]*xi).ln()/vp[i].sqrt() + 0.5*vp[i].sqrt();
-            let dminusi = dplusi - vp[i].sqrt();
-            let zbp = xi*self.p_tf*norm_cdf(dplusi) - self.p_ti[i]*norm_cdf(dminusi);
+            self.dplus[i] = (self.p_tf/self.p_ti[i]*self.x[i]).ln()/vp[i].sqrt() + 0.5*vp[i].sqrt();
+            self.dminus[i] = self.dplus[i] - vp[i].sqrt();
+            let zbp = self.x[i]*self.p_tf*norm_cdf(self.dplus[i]) - self.p_ti[i]*norm_cdf(self.dminus[i]);
             out += ci*zbp;
         }
 
         return out;
     }
-    #[allow(dead_code)]
     pub fn backward(&self, dout: f64) -> ([f64; 20], [f64; 20], [f64; 20], f64) {
-        let da = [1.0; 20];
-        let db = [1.0; 20];
-        let dvp = [1.0; 20];
-        let drstar = 1.0;
+        let mut da = [0.0; 20];
+        let mut db = [0.0; 20];
+        let mut dvp = [0.0; 20];
+        let mut drstar = 0.0;
+        
+        let num = 20;
+        for i in 0..num {
+            let ci = if i == num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
+            let tmp = ci*self.p_tf*norm_cdf(self.dplus[i])*dout;
+            da[i] += tmp*self.x[i];
+            db[i] += -tmp*self.x[i]*self.rstar;
+            drstar += -tmp*self.x[i]*self.b[i];
+            
+            let tmp = self.x[i]*self.p_tf*norm_pdf(self.dplus[i])*dout;
+            da[i] += tmp/self.vp[i].sqrt();
+            db[i] += -tmp*self.rstar/self.vp[i].sqrt();
+            drstar += -tmp*self.b[i]/self.vp[i].sqrt();
+            dvp[i] += -tmp*(0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()*self.vp[i].powf(-1.5)+0.25*self.vp[i].powf(-0.5));
+
+            let tmp = self.p_ti[i]*norm_pdf(self.dminus[i])*dout;
+            da[i] += tmp/self.vp[i].sqrt();
+            db[i] += -tmp*self.rstar/self.vp[i].sqrt();
+            drstar += -tmp*self.b[i]/self.vp[i].sqrt();
+            dvp[i] += -tmp*(0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()*self.vp[i].powf(-1.5)-0.25*self.vp[i].powf(-0.5));
+        }
         return (da, db, dvp, drstar);
     }
 }
@@ -784,6 +885,9 @@ pub struct PSwaptionT7 {
     k: f64,
     p_tf: f64,
     p_ti: [f64; 28],
+    x: [f64; 28],
+    dplus: [f64; 28],
+    dminus: [f64; 28],
 }
 
 impl PSwaptionT7 {
@@ -794,7 +898,7 @@ impl PSwaptionT7 {
         for i in 0..num {
             p_ti[i] = ts.p[(12.0*t) as usize + i + 1];
         } 
-        PSwaptionT7 { a: [f64::NAN; 28], b: [f64::NAN; 28], vp: [f64::NAN; 28], rstar: f64::NAN, k: k, p_tf: p_tf, p_ti: p_ti }
+        PSwaptionT7 { a: [f64::NAN; 28], b: [f64::NAN; 28], vp: [f64::NAN; 28], rstar: f64::NAN, k: k, p_tf: p_tf, p_ti: p_ti, x: [f64::NAN; 28], dplus: [f64::NAN; 28], dminus: [f64::NAN; 28] }
     }
     pub fn forward(&mut self, a: [f64; 28], b: [f64; 28], vp: [f64; 28], rstar: f64) -> f64 {
         self.a = a;
@@ -805,22 +909,42 @@ impl PSwaptionT7 {
         let mut out = 0.0;
         let num = 28;
         for i in 0..num {
-            let xi = (a[i]-b[i]*rstar).exp();
+            self.x[i] = (a[i]-b[i]*rstar).exp();
             let ci = if i == num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
-            let dplusi = (self.p_tf/self.p_ti[i]*xi).ln()/vp[i].sqrt() + 0.5*vp[i].sqrt();
-            let dminusi = dplusi - vp[i].sqrt();
-            let zbp = xi*self.p_tf*norm_cdf(dplusi) - self.p_ti[i]*norm_cdf(dminusi);
+            self.dplus[i] = (self.p_tf/self.p_ti[i]*self.x[i]).ln()/vp[i].sqrt() + 0.5*vp[i].sqrt();
+            self.dminus[i] = self.dplus[i] - vp[i].sqrt();
+            let zbp = self.x[i]*self.p_tf*norm_cdf(self.dplus[i]) - self.p_ti[i]*norm_cdf(self.dminus[i]);
             out += ci*zbp;
         }
 
         return out;
     }
-    #[allow(dead_code)]
     pub fn backward(&self, dout: f64) -> ([f64; 28], [f64; 28], [f64; 28], f64) {
-        let da = [1.0; 28];
-        let db = [1.0; 28];
-        let dvp = [1.0; 28];
-        let drstar = 1.0;
+        let mut da = [0.0; 28];
+        let mut db = [0.0; 28];
+        let mut dvp = [0.0; 28];
+        let mut drstar = 0.0;
+        
+        let num = 28;
+        for i in 0..num {
+            let ci = if i == num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
+            let tmp = ci*self.p_tf*norm_cdf(self.dplus[i])*dout;
+            da[i] += tmp*self.x[i];
+            db[i] += -tmp*self.x[i]*self.rstar;
+            drstar += -tmp*self.x[i]*self.b[i];
+            
+            let tmp = self.x[i]*self.p_tf*norm_pdf(self.dplus[i])*dout;
+            da[i] += tmp/self.vp[i].sqrt();
+            db[i] += -tmp*self.rstar/self.vp[i].sqrt();
+            drstar += -tmp*self.b[i]/self.vp[i].sqrt();
+            dvp[i] += -tmp*(0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()*self.vp[i].powf(-1.5)+0.25*self.vp[i].powf(-0.5));
+
+            let tmp = self.p_ti[i]*norm_pdf(self.dminus[i])*dout;
+            da[i] += tmp/self.vp[i].sqrt();
+            db[i] += -tmp*self.rstar/self.vp[i].sqrt();
+            drstar += -tmp*self.b[i]/self.vp[i].sqrt();
+            dvp[i] += -tmp*(0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()*self.vp[i].powf(-1.5)-0.25*self.vp[i].powf(-0.5));
+        }
         return (da, db, dvp, drstar);
     }
 }
@@ -834,6 +958,9 @@ pub struct PSwaptionT10 {
     k: f64,
     p_tf: f64,
     p_ti: [f64; 40],
+    x: [f64; 40],
+    dplus: [f64; 40],
+    dminus: [f64; 40],
 }
 
 impl PSwaptionT10 {
@@ -844,7 +971,7 @@ impl PSwaptionT10 {
         for i in 0..num {
             p_ti[i] = ts.p[(12.0*t) as usize + i + 1];
         } 
-        PSwaptionT10 { a: [f64::NAN; 40], b: [f64::NAN; 40], vp: [f64::NAN; 40], rstar: f64::NAN, k: k, p_tf: p_tf, p_ti: p_ti }
+        PSwaptionT10 { a: [f64::NAN; 40], b: [f64::NAN; 40], vp: [f64::NAN; 40], rstar: f64::NAN, k: k, p_tf: p_tf, p_ti: p_ti, x: [f64::NAN; 40], dplus: [f64::NAN; 40], dminus: [f64::NAN; 40] }
     }
     pub fn forward(&mut self, a: [f64; 40], b: [f64; 40], vp: [f64; 40], rstar: f64) -> f64 {
         self.a = a;
@@ -855,22 +982,42 @@ impl PSwaptionT10 {
         let mut out = 0.0;
         let num = 40;
         for i in 0..num {
-            let xi = (a[i]-b[i]*rstar).exp();
+            self.x[i] = (a[i]-b[i]*rstar).exp();
             let ci = if i == num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
-            let dplusi = (self.p_tf/self.p_ti[i]*xi).ln()/vp[i].sqrt() + 0.5*vp[i].sqrt();
-            let dminusi = dplusi - vp[i].sqrt();
-            let zbp = xi*self.p_tf*norm_cdf(dplusi) - self.p_ti[i]*norm_cdf(dminusi);
+            self.dplus[i] = (self.p_tf/self.p_ti[i]*self.x[i]).ln()/vp[i].sqrt() + 0.5*vp[i].sqrt();
+            self.dminus[i] = self.dplus[i] - vp[i].sqrt();
+            let zbp = self.x[i]*self.p_tf*norm_cdf(self.dplus[i]) - self.p_ti[i]*norm_cdf(self.dminus[i]);
             out += ci*zbp;
         }
 
         return out;
     }
-    #[allow(dead_code)]
     pub fn backward(&self, dout: f64) -> ([f64; 40], [f64; 40], [f64; 40], f64) {
-        let da = [1.0; 40];
-        let db = [1.0; 40];
-        let dvp = [1.0; 40];
-        let drstar = 1.0;
+        let mut da = [0.0; 40];
+        let mut db = [0.0; 40];
+        let mut dvp = [0.0; 40];
+        let mut drstar = 0.0;
+        
+        let num = 40;
+        for i in 0..num {
+            let ci = if i == num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
+            let tmp = ci*self.p_tf*norm_cdf(self.dplus[i])*dout;
+            da[i] += tmp*self.x[i];
+            db[i] += -tmp*self.x[i]*self.rstar;
+            drstar += -tmp*self.x[i]*self.b[i];
+            
+            let tmp = self.x[i]*self.p_tf*norm_pdf(self.dplus[i])*dout;
+            da[i] += tmp/self.vp[i].sqrt();
+            db[i] += -tmp*self.rstar/self.vp[i].sqrt();
+            drstar += -tmp*self.b[i]/self.vp[i].sqrt();
+            dvp[i] += -tmp*(0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()*self.vp[i].powf(-1.5)+0.25*self.vp[i].powf(-0.5));
+
+            let tmp = self.p_ti[i]*norm_pdf(self.dminus[i])*dout;
+            da[i] += tmp/self.vp[i].sqrt();
+            db[i] += -tmp*self.rstar/self.vp[i].sqrt();
+            drstar += -tmp*self.b[i]/self.vp[i].sqrt();
+            dvp[i] += -tmp*(0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()*self.vp[i].powf(-1.5)-0.25*self.vp[i].powf(-0.5));
+        }
         return (da, db, dvp, drstar);
     }
 }

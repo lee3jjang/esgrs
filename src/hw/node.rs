@@ -39,8 +39,8 @@ impl B {
         return out;
     }
     pub fn backward(&self, dout: f64) -> f64 {
-        let dalpha = -(1.0-(-self.alpha*(self.t2-self.t1)).exp())/(self.alpha*self.alpha)
-            + (-self.alpha*(self.t2-self.t1)).exp()/self.alpha*(self.t2-self.t1)*dout;
+        let dalpha = (-(1.0-(-self.alpha*(self.t2-self.t1)).exp())/(self.alpha*self.alpha)
+            + (-self.alpha*(self.t2-self.t1)).exp()/self.alpha*(self.t2-self.t1))*dout;
         return dalpha;
     }
 }
@@ -78,113 +78,84 @@ impl Vr {
         self.sigma5 = sigma5;
         self.sigma7 = sigma7;
         self.sigma10 = sigma10;
-
-        let out = if self.t == 1.0 {
-            sigma1*sigma1/2.0/alpha*((2.0*alpha*1.0).exp()-(2.0*alpha*0.0).exp())
-        } else if self.t == 2.0 {
-            sigma1*sigma1/2.0/alpha*((2.0*alpha*1.0).exp()-(2.0*alpha*0.0).exp())
-            + sigma2*sigma2/2.0/alpha*((2.0*alpha*2.0).exp()-(2.0*alpha*1.0).exp())
-        } else if self.t == 3.0 {
-            sigma1*sigma1/2.0/alpha*((2.0*alpha*1.0).exp()-(2.0*alpha*0.0).exp())
-            + sigma2*sigma2/2.0/alpha*((2.0*alpha*2.0).exp()-(2.0*alpha*1.0).exp())
-            + sigma3*sigma3/2.0/alpha*((2.0*alpha*3.0).exp()-(2.0*alpha*2.0).exp())
-        } else if self.t == 5.0 {
-            sigma1*sigma1/2.0/alpha*((2.0*alpha*1.0).exp()-(2.0*alpha*0.0).exp())
-            + sigma2*sigma2/2.0/alpha*((2.0*alpha*2.0).exp()-(2.0*alpha*1.0).exp())
-            + sigma3*sigma3/2.0/alpha*((2.0*alpha*3.0).exp()-(2.0*alpha*2.0).exp())
-            + sigma5*sigma5/2.0/alpha*((2.0*alpha*5.0).exp()-(2.0*alpha*3.0).exp())
-        } else if self.t == 7.0 {
-            sigma1*sigma1/2.0/alpha*((2.0*alpha*1.0).exp()-(2.0*alpha*0.0).exp())
-            + sigma2*sigma2/2.0/alpha*((2.0*alpha*2.0).exp()-(2.0*alpha*1.0).exp())
-            + sigma3*sigma3/2.0/alpha*((2.0*alpha*3.0).exp()-(2.0*alpha*2.0).exp())
-            + sigma5*sigma5/2.0/alpha*((2.0*alpha*5.0).exp()-(2.0*alpha*3.0).exp())
-            + sigma7*sigma7/2.0/alpha*((2.0*alpha*7.0).exp()-(2.0*alpha*5.0).exp())
-        } else if self.t == 10.0 {
-            sigma1*sigma1/2.0/alpha*((2.0*alpha*1.0).exp()-(2.0*alpha*0.0).exp())
-            + sigma2*sigma2/2.0/alpha*((2.0*alpha*2.0).exp()-(2.0*alpha*1.0).exp())
-            + sigma3*sigma3/2.0/alpha*((2.0*alpha*3.0).exp()-(2.0*alpha*2.0).exp())
-            + sigma5*sigma5/2.0/alpha*((2.0*alpha*5.0).exp()-(2.0*alpha*3.0).exp())
-            + sigma7*sigma7/2.0/alpha*((2.0*alpha*7.0).exp()-(2.0*alpha*5.0).exp())
-            + sigma10*sigma10/2.0/alpha*((2.0*alpha*10.0).exp()-(2.0*alpha*7.0).exp())
-        } else {
-            panic!("Vr(t) domain error");
+        let out = match self.t as usize {
+            1 => (-2.0*alpha*1.0).exp()/2.0/alpha*(sigma1*sigma1*((2.0*alpha*1.0).exp()-(2.0*alpha*0.0).exp())),
+            2 => (-2.0*alpha*2.0).exp()/2.0/alpha*(sigma1*sigma1*((2.0*alpha*1.0).exp()-(2.0*alpha*0.0).exp()) + sigma2*sigma2*((2.0*alpha*2.0).exp()-(2.0*alpha*1.0).exp())),
+            3 => (-2.0*alpha*3.0).exp()/2.0/alpha*(sigma1*sigma1*((2.0*alpha*1.0).exp()-(2.0*alpha*0.0).exp()) + sigma2*sigma2*((2.0*alpha*2.0).exp()-(2.0*alpha*1.0).exp()) + sigma3*sigma3*((2.0*alpha*3.0).exp()-(2.0*alpha*2.0).exp())),
+            5 => (-2.0*alpha*5.0).exp()/2.0/alpha*(sigma1*sigma1*((2.0*alpha*1.0).exp()-(2.0*alpha*0.0).exp()) + sigma2*sigma2*((2.0*alpha*2.0).exp()-(2.0*alpha*1.0).exp()) + sigma3*sigma3*((2.0*alpha*3.0).exp()-(2.0*alpha*2.0).exp()) + sigma5*sigma5*((2.0*alpha*5.0).exp()-(2.0*alpha*3.0).exp())),
+            7 => (-2.0*alpha*7.0).exp()/2.0/alpha*(sigma1*sigma1*((2.0*alpha*1.0).exp()-(2.0*alpha*0.0).exp()) + sigma2*sigma2*((2.0*alpha*2.0).exp()-(2.0*alpha*1.0).exp()) + sigma3*sigma3*((2.0*alpha*3.0).exp()-(2.0*alpha*2.0).exp()) + sigma5*sigma5*((2.0*alpha*5.0).exp()-(2.0*alpha*3.0).exp()) + sigma7*sigma7*((2.0*alpha*7.0).exp()-(2.0*alpha*5.0).exp())),
+            10 => (-2.0*alpha*10.0).exp()/2.0/alpha*(sigma1*sigma1*((2.0*alpha*1.0).exp()-(2.0*alpha*0.0).exp()) + sigma2*sigma2*((2.0*alpha*2.0).exp()-(2.0*alpha*1.0).exp()) + sigma3*sigma3*((2.0*alpha*3.0).exp()-(2.0*alpha*2.0).exp()) + sigma5*sigma5*((2.0*alpha*5.0).exp()-(2.0*alpha*3.0).exp()) + sigma7*sigma7*((2.0*alpha*7.0).exp()-(2.0*alpha*5.0).exp()) + sigma10*sigma10*((2.0*alpha*10.0).exp()-(2.0*alpha*7.0).exp())),
+            _ => panic!("Vr(t) domain error"),
         };
+
         return out;
     }
     pub fn backward(&self, dout: f64) -> (f64, f64, f64, f64, f64, f64, f64) {
-        let (dalpha, dsigma1, dsigma2, dsigma3, dsigma5, dsigma7, dsigma10) = if self.t == 1.0 {
-            let dalpha = -self.sigma1*self.sigma1/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp()) + self.sigma1*self.sigma1/self.alpha*(1.0*(2.0*1.0*self.alpha).exp()-0.0*(2.0*0.0*self.alpha).exp());
-            let dsigma1 = self.sigma1/self.alpha*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp());
-            let dsigma2 = 0.0;
-            let dsigma3 = 0.0;
-            let dsigma5 = 0.0;
-            let dsigma7 = 0.0;
-            let dsigma10 = 0.0;
-            (dalpha*dout, dsigma1*dout, dsigma2*dout, dsigma3*dout, dsigma5*dout, dsigma7*dout, dsigma10*dout)
-        } else if self.t == 2.0 {
-            let dalpha = -self.sigma1*self.sigma1/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp()) + self.sigma1*self.sigma1/self.alpha*(1.0*(2.0*1.0*self.alpha).exp()-0.0*(2.0*0.0*self.alpha).exp())
-            -self.sigma2*self.sigma2/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp()) + self.sigma2*self.sigma2/self.alpha*(2.0*(2.0*2.0*self.alpha).exp()-1.0*(2.0*1.0*self.alpha).exp());
-            let dsigma1 = self.sigma1/self.alpha*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp());
-            let dsigma2 = self.sigma2/self.alpha*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp());
-            let dsigma3 = 0.0;
-            let dsigma5 = 0.0;
-            let dsigma7 = 0.0;
-            let dsigma10 = 0.0;
-            (dalpha*dout, dsigma1*dout, dsigma2*dout, dsigma3*dout, dsigma5*dout, dsigma7*dout, dsigma10*dout)
-        } else if self.t == 3.0 {
-            let dalpha = -self.sigma1*self.sigma1/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp()) + self.sigma1*self.sigma1/self.alpha*(1.0*(2.0*1.0*self.alpha).exp()-0.0*(2.0*0.0*self.alpha).exp())
-            -self.sigma2*self.sigma2/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp()) + self.sigma2*self.sigma2/self.alpha*(2.0*(2.0*2.0*self.alpha).exp()-1.0*(2.0*1.0*self.alpha).exp())
-            -self.sigma3*self.sigma3/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*3.0).exp()-(2.0*self.alpha*2.0).exp()) + self.sigma3*self.sigma3/self.alpha*(3.0*(2.0*3.0*self.alpha).exp()-2.0*(2.0*2.0*self.alpha).exp());
-            let dsigma1 = self.sigma1/self.alpha*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp());
-            let dsigma2 = self.sigma2/self.alpha*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp());
-            let dsigma3 = self.sigma3/self.alpha*((2.0*self.alpha*3.0).exp()-(2.0*self.alpha*2.0).exp());
-            let dsigma5 = 0.0;
-            let dsigma7 = 0.0;
-            let dsigma10 = 0.0;
-            (dalpha*dout, dsigma1*dout, dsigma2*dout, dsigma3*dout, dsigma5*dout, dsigma7*dout, dsigma10*dout)
-        } else if self.t == 5.0 {
-            let dalpha = -self.sigma1*self.sigma1/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp()) + self.sigma1*self.sigma1/self.alpha*(1.0*(2.0*1.0*self.alpha).exp()-0.0*(2.0*0.0*self.alpha).exp())
-            -self.sigma2*self.sigma2/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp()) + self.sigma2*self.sigma2/self.alpha*(2.0*(2.0*2.0*self.alpha).exp()-1.0*(2.0*1.0*self.alpha).exp())
-            -self.sigma3*self.sigma3/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*3.0).exp()-(2.0*self.alpha*2.0).exp()) + self.sigma3*self.sigma3/self.alpha*(3.0*(2.0*3.0*self.alpha).exp()-2.0*(2.0*2.0*self.alpha).exp())
-            -self.sigma5*self.sigma5/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*5.0).exp()-(2.0*self.alpha*3.0).exp()) + self.sigma5*self.sigma5/self.alpha*(5.0*(2.0*5.0*self.alpha).exp()-3.0*(2.0*3.0*self.alpha).exp());
-            let dsigma1 = self.sigma1/self.alpha*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp());
-            let dsigma2 = self.sigma2/self.alpha*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp());
-            let dsigma3 = self.sigma3/self.alpha*((2.0*self.alpha*3.0).exp()-(2.0*self.alpha*2.0).exp());
-            let dsigma5 = self.sigma5/self.alpha*((2.0*self.alpha*5.0).exp()-(2.0*self.alpha*3.0).exp());
-            let dsigma7 = 0.0;
-            let dsigma10 = 0.0;
-            (dalpha*dout, dsigma1*dout, dsigma2*dout, dsigma3*dout, dsigma5*dout, dsigma7*dout, dsigma10*dout)
-        } else if self.t == 7.0 {
-            let dalpha = -self.sigma1*self.sigma1/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp()) + self.sigma1*self.sigma1/self.alpha*(1.0*(2.0*1.0*self.alpha).exp()-0.0*(2.0*0.0*self.alpha).exp())
-            -self.sigma2*self.sigma2/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp()) + self.sigma2*self.sigma2/self.alpha*(2.0*(2.0*2.0*self.alpha).exp()-1.0*(2.0*1.0*self.alpha).exp())
-            -self.sigma3*self.sigma3/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*3.0).exp()-(2.0*self.alpha*2.0).exp()) + self.sigma3*self.sigma3/self.alpha*(3.0*(2.0*3.0*self.alpha).exp()-2.0*(2.0*2.0*self.alpha).exp())
-            -self.sigma5*self.sigma5/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*5.0).exp()-(2.0*self.alpha*3.0).exp()) + self.sigma5*self.sigma5/self.alpha*(5.0*(2.0*5.0*self.alpha).exp()-3.0*(2.0*3.0*self.alpha).exp())
-            -self.sigma7*self.sigma7/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*7.0).exp()-(2.0*self.alpha*5.0).exp()) + self.sigma7*self.sigma7/self.alpha*(7.0*(2.0*7.0*self.alpha).exp()-5.0*(2.0*5.0*self.alpha).exp());
-            let dsigma1 = self.sigma1/self.alpha*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp());
-            let dsigma2 = self.sigma2/self.alpha*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp());
-            let dsigma3 = self.sigma3/self.alpha*((2.0*self.alpha*3.0).exp()-(2.0*self.alpha*2.0).exp());
-            let dsigma5 = self.sigma5/self.alpha*((2.0*self.alpha*5.0).exp()-(2.0*self.alpha*3.0).exp());
-            let dsigma7 = self.sigma7/self.alpha*((2.0*self.alpha*7.0).exp()-(2.0*self.alpha*5.0).exp());
-            let dsigma10 = 0.0;
-            (dalpha*dout, dsigma1*dout, dsigma2*dout, dsigma3*dout, dsigma5*dout, dsigma7*dout, dsigma10*dout)
-        } else if self.t == 10.0 {
-            let dalpha = -self.sigma1*self.sigma1/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp()) + self.sigma1*self.sigma1/self.alpha*(1.0*(2.0*1.0*self.alpha).exp()-0.0*(2.0*0.0*self.alpha).exp())
-            -self.sigma2*self.sigma2/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp()) + self.sigma2*self.sigma2/self.alpha*(2.0*(2.0*2.0*self.alpha).exp()-1.0*(2.0*1.0*self.alpha).exp())
-            -self.sigma3*self.sigma3/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*3.0).exp()-(2.0*self.alpha*2.0).exp()) + self.sigma3*self.sigma3/self.alpha*(3.0*(2.0*3.0*self.alpha).exp()-2.0*(2.0*2.0*self.alpha).exp())
-            -self.sigma5*self.sigma5/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*5.0).exp()-(2.0*self.alpha*3.0).exp()) + self.sigma5*self.sigma5/self.alpha*(5.0*(2.0*5.0*self.alpha).exp()-3.0*(2.0*3.0*self.alpha).exp())
-            -self.sigma7*self.sigma7/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*7.0).exp()-(2.0*self.alpha*5.0).exp()) + self.sigma7*self.sigma7/self.alpha*(7.0*(2.0*7.0*self.alpha).exp()-5.0*(2.0*5.0*self.alpha).exp())
-            -self.sigma10*self.sigma10/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*10.0).exp()-(2.0*self.alpha*7.0).exp()) + self.sigma10*self.sigma10/self.alpha*(10.0*(2.0*10.0*self.alpha).exp()-7.0*(2.0*7.0*self.alpha).exp());
-            let dsigma1 = self.sigma1/self.alpha*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp());
-            let dsigma2 = self.sigma2/self.alpha*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp());
-            let dsigma3 = self.sigma3/self.alpha*((2.0*self.alpha*3.0).exp()-(2.0*self.alpha*2.0).exp());
-            let dsigma5 = self.sigma5/self.alpha*((2.0*self.alpha*5.0).exp()-(2.0*self.alpha*3.0).exp());
-            let dsigma7 = self.sigma7/self.alpha*((2.0*self.alpha*7.0).exp()-(2.0*self.alpha*5.0).exp());
-            let dsigma10 = self.sigma10/self.alpha*((2.0*self.alpha*10.0).exp()-(2.0*self.alpha*7.0).exp());
-            (dalpha*dout, dsigma1*dout, dsigma2*dout, dsigma3*dout, dsigma5*dout, dsigma7*dout, dsigma10*dout)
-        } else {
-            panic!("Vr(t) domain error");
+        let (dalpha, dsigma1, dsigma2, dsigma3, dsigma5, dsigma7, dsigma10) = match self.t as usize {
+            1 => {
+                let dalpha = -(1.0/self.alpha+0.5/self.alpha/self.alpha)*(-2.0*self.alpha*1.0).exp()*(self.sigma1*self.sigma1*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp()));
+                let dsigma1 = (-2.0*self.alpha*1.0).exp()/self.alpha*self.sigma1*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp());
+                let dsigma2 = 0.0;
+                let dsigma3 = 0.0;
+                let dsigma5 = 0.0;
+                let dsigma7 = 0.0;
+                let dsigma10 = 0.0;
+                (dalpha*dout, dsigma1*dout, dsigma2*dout, dsigma3*dout, dsigma5*dout, dsigma7*dout, dsigma10*dout)
+            }
+            2 => {
+                let dalpha = -(2.0/self.alpha+0.5/self.alpha/self.alpha)*(-2.0*self.alpha*2.0).exp()*(self.sigma1*self.sigma1*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp()) + self.sigma2*self.sigma2*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp()));
+                let dsigma1 = (-2.0*self.alpha*2.0).exp()/self.alpha*self.sigma1*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp());
+                let dsigma2 = (-2.0*self.alpha*2.0).exp()/self.alpha*self.sigma2*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp());
+                let dsigma3 = 0.0;
+                let dsigma5 = 0.0;
+                let dsigma7 = 0.0;
+                let dsigma10 = 0.0;
+                (dalpha*dout, dsigma1*dout, dsigma2*dout, dsigma3*dout, dsigma5*dout, dsigma7*dout, dsigma10*dout)
+            }
+            3 => {
+                let dalpha = -(3.0/self.alpha+0.5/self.alpha/self.alpha)*(-2.0*self.alpha*3.0).exp()*(self.sigma1*self.sigma1*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp()) + self.sigma2*self.sigma2*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp()) + self.sigma3*self.sigma3*((2.0*self.alpha*3.0).exp()-(2.0*self.alpha*2.0).exp()));
+                let dsigma1 = (-2.0*self.alpha*3.0).exp()/self.alpha*self.sigma1*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp());
+                let dsigma2 = (-2.0*self.alpha*3.0).exp()/self.alpha*self.sigma2*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp());
+                let dsigma3 = (-2.0*self.alpha*3.0).exp()/self.alpha*self.sigma3*((2.0*self.alpha*3.0).exp()-(2.0*self.alpha*2.0).exp());
+                let dsigma5 = 0.0;
+                let dsigma7 = 0.0;
+                let dsigma10 = 0.0;
+                (dalpha*dout, dsigma1*dout, dsigma2*dout, dsigma3*dout, dsigma5*dout, dsigma7*dout, dsigma10*dout)
+            }
+            5 => {
+                let dalpha = -(5.0/self.alpha+0.5/self.alpha/self.alpha)*(-2.0*self.alpha*5.0).exp()*(self.sigma1*self.sigma1*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp()) + self.sigma2*self.sigma2*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp()) + self.sigma3*self.sigma3*((2.0*self.alpha*3.0).exp()-(2.0*self.alpha*2.0).exp()) + self.sigma5*self.sigma5*((2.0*self.alpha*5.0).exp()-(2.0*self.alpha*3.0).exp()));
+                let dsigma1 = (-2.0*self.alpha*5.0).exp()/self.alpha*self.sigma1*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp());
+                let dsigma2 = (-2.0*self.alpha*5.0).exp()/self.alpha*self.sigma2*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp());
+                let dsigma3 = (-2.0*self.alpha*5.0).exp()/self.alpha*self.sigma3*((2.0*self.alpha*3.0).exp()-(2.0*self.alpha*2.0).exp());
+                let dsigma5 = (-2.0*self.alpha*5.0).exp()/self.alpha*self.sigma5*((2.0*self.alpha*5.0).exp()-(2.0*self.alpha*3.0).exp());
+                let dsigma7 = 0.0;
+                let dsigma10 = 0.0;
+                (dalpha*dout, dsigma1*dout, dsigma2*dout, dsigma3*dout, dsigma5*dout, dsigma7*dout, dsigma10*dout)
+            }
+            7 => {
+                let dalpha = -(7.0/self.alpha+0.5/self.alpha/self.alpha)*(-2.0*self.alpha*7.0).exp()*(self.sigma1*self.sigma1*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp()) + self.sigma2*self.sigma2*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp()) + self.sigma3*self.sigma3*((2.0*self.alpha*3.0).exp()-(2.0*self.alpha*2.0).exp()) + self.sigma5*self.sigma5*((2.0*self.alpha*5.0).exp()-(2.0*self.alpha*3.0).exp()) + self.sigma7*self.sigma7*((2.0*self.alpha*7.0).exp()-(2.0*self.alpha*5.0).exp()));
+                let dsigma1 = (-2.0*self.alpha*7.0).exp()/self.alpha*self.sigma1*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp());
+                let dsigma2 = (-2.0*self.alpha*7.0).exp()/self.alpha*self.sigma2*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp());
+                let dsigma3 = (-2.0*self.alpha*7.0).exp()/self.alpha*self.sigma3*((2.0*self.alpha*3.0).exp()-(2.0*self.alpha*2.0).exp());
+                let dsigma5 = (-2.0*self.alpha*7.0).exp()/self.alpha*self.sigma5*((2.0*self.alpha*5.0).exp()-(2.0*self.alpha*3.0).exp());
+                let dsigma7 = (-2.0*self.alpha*7.0).exp()/self.alpha*self.sigma7*((2.0*self.alpha*7.0).exp()-(2.0*self.alpha*5.0).exp());
+                let dsigma10 = 0.0;
+                (dalpha*dout, dsigma1*dout, dsigma2*dout, dsigma3*dout, dsigma5*dout, dsigma7*dout, dsigma10*dout)
+            }
+            10 => {
+                let dalpha = -(10.0/self.alpha+0.5/self.alpha/self.alpha)*(-2.0*self.alpha*10.0).exp()*(self.sigma1*self.sigma1*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp()) + self.sigma2*self.sigma2*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp()) + self.sigma3*self.sigma3*((2.0*self.alpha*3.0).exp()-(2.0*self.alpha*2.0).exp()) + self.sigma5*self.sigma5*((2.0*self.alpha*5.0).exp()-(2.0*self.alpha*3.0).exp()) + self.sigma7*self.sigma7*((2.0*self.alpha*7.0).exp()-(2.0*self.alpha*5.0).exp()) + self.sigma10*self.sigma10*((2.0*self.alpha*10.0).exp()-(2.0*self.alpha*7.0).exp()));
+                let dsigma1 = (-2.0*self.alpha*10.0).exp()/self.alpha*self.sigma1*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp());
+                let dsigma2 = (-2.0*self.alpha*10.0).exp()/self.alpha*self.sigma2*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp());
+                let dsigma3 = (-2.0*self.alpha*10.0).exp()/self.alpha*self.sigma3*((2.0*self.alpha*3.0).exp()-(2.0*self.alpha*2.0).exp());
+                let dsigma5 = (-2.0*self.alpha*10.0).exp()/self.alpha*self.sigma5*((2.0*self.alpha*5.0).exp()-(2.0*self.alpha*3.0).exp());
+                let dsigma7 = (-2.0*self.alpha*10.0).exp()/self.alpha*self.sigma7*((2.0*self.alpha*7.0).exp()-(2.0*self.alpha*5.0).exp());
+                let dsigma10 = (-2.0*self.alpha*10.0).exp()/self.alpha*self.sigma10*((2.0*self.alpha*10.0).exp()-(2.0*self.alpha*7.0).exp());
+                (dalpha*dout, dsigma1*dout, dsigma2*dout, dsigma3*dout, dsigma5*dout, dsigma7*dout, dsigma10*dout)
+            }
+            _ => {
+                panic!("Vr(t) domain error");
+            }
         };
-
         return (dalpha, dsigma1, dsigma2, dsigma3, dsigma5, dsigma7, dsigma10);
     }
 }
@@ -251,8 +222,8 @@ impl Vp {
         return out;
     }
     pub fn backward(&self, dout: f64) -> (f64, f64) {
+        let db = 2.0*self.b*self.vr*dout;
         let dvr = self.b*self.b*dout;
-        let db = self.vr*dout;
         return (db, dvr);
     }
 }
@@ -492,7 +463,6 @@ impl RstarT7 {
         self.out = JamshidianT7 { a: self.a, b: self.b, k: self.k }.gss(0.0, 1.0);
         return self.out;
     }
-    #[allow(dead_code)]
     pub fn backward(&self, dout: f64) -> ([f64; 28], [f64; 28]) {
         let mut da = [0.0; 28];
         let mut db = [0.0; 28];
@@ -633,23 +603,24 @@ impl PSwaptionT1 {
         
         let num = 4;
         for i in 0..num {
-            let ci = if i == num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
-            let tmp = ci*self.p_tf*norm_cdf(self.dplus[i])*dout;
-            da[i] += tmp*self.x[i];
-            db[i] += -tmp*self.x[i]*self.rstar;
-            drstar += -tmp*self.x[i]*self.b[i];
-            
-            let tmp = self.x[i]*self.p_tf*norm_pdf(self.dplus[i])*dout;
-            da[i] += tmp/self.vp[i].sqrt();
-            db[i] += -tmp*self.rstar/self.vp[i].sqrt();
-            drstar += -tmp*self.b[i]/self.vp[i].sqrt();
-            dvp[i] += -tmp*(0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()*self.vp[i].powf(-1.5)+0.25*self.vp[i].powf(-0.5));
+            let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
 
-            let tmp = self.p_ti[i]*norm_pdf(self.dminus[i])*dout;
-            da[i] += tmp/self.vp[i].sqrt();
-            db[i] += -tmp*self.rstar/self.vp[i].sqrt();
-            drstar += -tmp*self.b[i]/self.vp[i].sqrt();
-            dvp[i] += -tmp*(0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()*self.vp[i].powf(-1.5)-0.25*self.vp[i].powf(-0.5));
+            let tmp = ci*self.p_tf*norm_cdf(self.dplus[i])*self.x[i]*dout;
+            da[i] += tmp;
+            db[i] += -tmp*self.rstar;
+            drstar += -tmp*self.b[i];
+            
+            let tmp = ci*self.x[i]*self.p_tf*norm_pdf(self.dplus[i])/self.vp[i].sqrt()*dout;
+            da[i] += tmp;
+            db[i] += -tmp*self.rstar;
+            drstar += -tmp*self.b[i];
+            dvp[i] += tmp*(-0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()/self.vp[i]+0.25*self.vp[i]);
+
+            let tmp = ci*self.p_ti[i]*norm_pdf(self.dminus[i])/self.vp[i].sqrt()*dout;
+            da[i] += -tmp;
+            db[i] += tmp*self.rstar;
+            drstar += tmp*self.b[i];
+            dvp[i] += -tmp*(-0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()/self.vp[i]-0.25*self.vp[i]);
         }
         return (da, db, dvp, drstar);
     }
@@ -706,23 +677,24 @@ impl PSwaptionT2 {
         
         let num = 8;
         for i in 0..num {
-            let ci = if i == num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
-            let tmp = ci*self.p_tf*norm_cdf(self.dplus[i])*dout;
-            da[i] += tmp*self.x[i];
-            db[i] += -tmp*self.x[i]*self.rstar;
-            drstar += -tmp*self.x[i]*self.b[i];
-            
-            let tmp = self.x[i]*self.p_tf*norm_pdf(self.dplus[i])*dout;
-            da[i] += tmp/self.vp[i].sqrt();
-            db[i] += -tmp*self.rstar/self.vp[i].sqrt();
-            drstar += -tmp*self.b[i]/self.vp[i].sqrt();
-            dvp[i] += -tmp*(0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()*self.vp[i].powf(-1.5)+0.25*self.vp[i].powf(-0.5));
+            let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
 
-            let tmp = self.p_ti[i]*norm_pdf(self.dminus[i])*dout;
-            da[i] += tmp/self.vp[i].sqrt();
-            db[i] += -tmp*self.rstar/self.vp[i].sqrt();
-            drstar += -tmp*self.b[i]/self.vp[i].sqrt();
-            dvp[i] += -tmp*(0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()*self.vp[i].powf(-1.5)-0.25*self.vp[i].powf(-0.5));
+            let tmp = ci*self.p_tf*norm_cdf(self.dplus[i])*self.x[i]*dout;
+            da[i] += tmp;
+            db[i] += -tmp*self.rstar;
+            drstar += -tmp*self.b[i];
+            
+            let tmp = ci*self.x[i]*self.p_tf*norm_pdf(self.dplus[i])/self.vp[i].sqrt()*dout;
+            da[i] += tmp;
+            db[i] += -tmp*self.rstar;
+            drstar += -tmp*self.b[i];
+            dvp[i] += tmp*(-0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()/self.vp[i]+0.25*self.vp[i]);
+
+            let tmp = ci*self.p_ti[i]*norm_pdf(self.dminus[i])/self.vp[i].sqrt()*dout;
+            da[i] += -tmp;
+            db[i] += tmp*self.rstar;
+            drstar += tmp*self.b[i];
+            dvp[i] += -tmp*(-0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()/self.vp[i]-0.25*self.vp[i]);
         }
         
         return (da, db, dvp, drstar);
@@ -780,23 +752,24 @@ impl PSwaptionT3 {
         
         let num = 12;
         for i in 0..num {
-            let ci = if i == num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
-            let tmp = ci*self.p_tf*norm_cdf(self.dplus[i])*dout;
-            da[i] += tmp*self.x[i];
-            db[i] += -tmp*self.x[i]*self.rstar;
-            drstar += -tmp*self.x[i]*self.b[i];
-            
-            let tmp = self.x[i]*self.p_tf*norm_pdf(self.dplus[i])*dout;
-            da[i] += tmp/self.vp[i].sqrt();
-            db[i] += -tmp*self.rstar/self.vp[i].sqrt();
-            drstar += -tmp*self.b[i]/self.vp[i].sqrt();
-            dvp[i] += -tmp*(0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()*self.vp[i].powf(-1.5)+0.25*self.vp[i].powf(-0.5));
+            let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
 
-            let tmp = self.p_ti[i]*norm_pdf(self.dminus[i])*dout;
-            da[i] += tmp/self.vp[i].sqrt();
-            db[i] += -tmp*self.rstar/self.vp[i].sqrt();
-            drstar += -tmp*self.b[i]/self.vp[i].sqrt();
-            dvp[i] += -tmp*(0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()*self.vp[i].powf(-1.5)-0.25*self.vp[i].powf(-0.5));
+            let tmp = ci*self.p_tf*norm_cdf(self.dplus[i])*self.x[i]*dout;
+            da[i] += tmp;
+            db[i] += -tmp*self.rstar;
+            drstar += -tmp*self.b[i];
+            
+            let tmp = ci*self.x[i]*self.p_tf*norm_pdf(self.dplus[i])/self.vp[i].sqrt()*dout;
+            da[i] += tmp;
+            db[i] += -tmp*self.rstar;
+            drstar += -tmp*self.b[i];
+            dvp[i] += tmp*(-0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()/self.vp[i]+0.25*self.vp[i]);
+
+            let tmp = ci*self.p_ti[i]*norm_pdf(self.dminus[i])/self.vp[i].sqrt()*dout;
+            da[i] += -tmp;
+            db[i] += tmp*self.rstar;
+            drstar += tmp*self.b[i];
+            dvp[i] += -tmp*(-0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()/self.vp[i]-0.25*self.vp[i]);
         }
         return (da, db, dvp, drstar);
     }
@@ -853,23 +826,24 @@ impl PSwaptionT5 {
         
         let num = 20;
         for i in 0..num {
-            let ci = if i == num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
-            let tmp = ci*self.p_tf*norm_cdf(self.dplus[i])*dout;
-            da[i] += tmp*self.x[i];
-            db[i] += -tmp*self.x[i]*self.rstar;
-            drstar += -tmp*self.x[i]*self.b[i];
-            
-            let tmp = self.x[i]*self.p_tf*norm_pdf(self.dplus[i])*dout;
-            da[i] += tmp/self.vp[i].sqrt();
-            db[i] += -tmp*self.rstar/self.vp[i].sqrt();
-            drstar += -tmp*self.b[i]/self.vp[i].sqrt();
-            dvp[i] += -tmp*(0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()*self.vp[i].powf(-1.5)+0.25*self.vp[i].powf(-0.5));
+            let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
 
-            let tmp = self.p_ti[i]*norm_pdf(self.dminus[i])*dout;
-            da[i] += tmp/self.vp[i].sqrt();
-            db[i] += -tmp*self.rstar/self.vp[i].sqrt();
-            drstar += -tmp*self.b[i]/self.vp[i].sqrt();
-            dvp[i] += -tmp*(0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()*self.vp[i].powf(-1.5)-0.25*self.vp[i].powf(-0.5));
+            let tmp = ci*self.p_tf*norm_cdf(self.dplus[i])*self.x[i]*dout;
+            da[i] += tmp;
+            db[i] += -tmp*self.rstar;
+            drstar += -tmp*self.b[i];
+            
+            let tmp = ci*self.x[i]*self.p_tf*norm_pdf(self.dplus[i])/self.vp[i].sqrt()*dout;
+            da[i] += tmp;
+            db[i] += -tmp*self.rstar;
+            drstar += -tmp*self.b[i];
+            dvp[i] += tmp*(-0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()/self.vp[i]+0.25*self.vp[i]);
+
+            let tmp = ci*self.p_ti[i]*norm_pdf(self.dminus[i])/self.vp[i].sqrt()*dout;
+            da[i] += -tmp;
+            db[i] += tmp*self.rstar;
+            drstar += tmp*self.b[i];
+            dvp[i] += -tmp*(-0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()/self.vp[i]-0.25*self.vp[i]);
         }
         return (da, db, dvp, drstar);
     }
@@ -926,23 +900,24 @@ impl PSwaptionT7 {
         
         let num = 28;
         for i in 0..num {
-            let ci = if i == num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
-            let tmp = ci*self.p_tf*norm_cdf(self.dplus[i])*dout;
-            da[i] += tmp*self.x[i];
-            db[i] += -tmp*self.x[i]*self.rstar;
-            drstar += -tmp*self.x[i]*self.b[i];
-            
-            let tmp = self.x[i]*self.p_tf*norm_pdf(self.dplus[i])*dout;
-            da[i] += tmp/self.vp[i].sqrt();
-            db[i] += -tmp*self.rstar/self.vp[i].sqrt();
-            drstar += -tmp*self.b[i]/self.vp[i].sqrt();
-            dvp[i] += -tmp*(0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()*self.vp[i].powf(-1.5)+0.25*self.vp[i].powf(-0.5));
+            let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
 
-            let tmp = self.p_ti[i]*norm_pdf(self.dminus[i])*dout;
-            da[i] += tmp/self.vp[i].sqrt();
-            db[i] += -tmp*self.rstar/self.vp[i].sqrt();
-            drstar += -tmp*self.b[i]/self.vp[i].sqrt();
-            dvp[i] += -tmp*(0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()*self.vp[i].powf(-1.5)-0.25*self.vp[i].powf(-0.5));
+            let tmp = ci*self.p_tf*norm_cdf(self.dplus[i])*self.x[i]*dout;
+            da[i] += tmp;
+            db[i] += -tmp*self.rstar;
+            drstar += -tmp*self.b[i];
+            
+            let tmp = ci*self.x[i]*self.p_tf*norm_pdf(self.dplus[i])/self.vp[i].sqrt()*dout;
+            da[i] += tmp;
+            db[i] += -tmp*self.rstar;
+            drstar += -tmp*self.b[i];
+            dvp[i] += tmp*(-0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()/self.vp[i]+0.25*self.vp[i]);
+
+            let tmp = ci*self.p_ti[i]*norm_pdf(self.dminus[i])/self.vp[i].sqrt()*dout;
+            da[i] += -tmp;
+            db[i] += tmp*self.rstar;
+            drstar += tmp*self.b[i];
+            dvp[i] += -tmp*(-0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()/self.vp[i]-0.25*self.vp[i]);
         }
         return (da, db, dvp, drstar);
     }
@@ -999,23 +974,24 @@ impl PSwaptionT10 {
         
         let num = 40;
         for i in 0..num {
-            let ci = if i == num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
-            let tmp = ci*self.p_tf*norm_cdf(self.dplus[i])*dout;
-            da[i] += tmp*self.x[i];
-            db[i] += -tmp*self.x[i]*self.rstar;
-            drstar += -tmp*self.x[i]*self.b[i];
-            
-            let tmp = self.x[i]*self.p_tf*norm_pdf(self.dplus[i])*dout;
-            da[i] += tmp/self.vp[i].sqrt();
-            db[i] += -tmp*self.rstar/self.vp[i].sqrt();
-            drstar += -tmp*self.b[i]/self.vp[i].sqrt();
-            dvp[i] += -tmp*(0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()*self.vp[i].powf(-1.5)+0.25*self.vp[i].powf(-0.5));
+            let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
 
-            let tmp = self.p_ti[i]*norm_pdf(self.dminus[i])*dout;
-            da[i] += tmp/self.vp[i].sqrt();
-            db[i] += -tmp*self.rstar/self.vp[i].sqrt();
-            drstar += -tmp*self.b[i]/self.vp[i].sqrt();
-            dvp[i] += -tmp*(0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()*self.vp[i].powf(-1.5)-0.25*self.vp[i].powf(-0.5));
+            let tmp = ci*self.p_tf*norm_cdf(self.dplus[i])*self.x[i]*dout;
+            da[i] += tmp;
+            db[i] += -tmp*self.rstar;
+            drstar += -tmp*self.b[i];
+            
+            let tmp = ci*self.x[i]*self.p_tf*norm_pdf(self.dplus[i])/self.vp[i].sqrt()*dout;
+            da[i] += tmp;
+            db[i] += -tmp*self.rstar;
+            drstar += -tmp*self.b[i];
+            dvp[i] += tmp*(-0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()/self.vp[i]+0.25*self.vp[i]);
+
+            let tmp = ci*self.p_ti[i]*norm_pdf(self.dminus[i])/self.vp[i].sqrt()*dout;
+            da[i] += -tmp;
+            db[i] += tmp*self.rstar;
+            drstar += tmp*self.b[i];
+            dvp[i] += -tmp*(-0.5*(self.p_tf/self.p_ti[i]*self.x[i]).ln()/self.vp[i]-0.25*self.vp[i]);
         }
         return (da, db, dvp, drstar);
     }
@@ -1049,6 +1025,39 @@ impl MRSE {
         for i in 0..6 {
             for j in 0..6 {
                 dpswaption[i][j] = -2.0*(1.0-self.pswaption[i][j]/self.pswaption_mkt[i][j])/self.pswaption_mkt[i][j]/36.0*dout;
+            }
+        }
+        return dpswaption;
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct MRAE {
+    pswaption: [[f64; 6]; 6],
+    pswaption_mkt: [[f64; 6]; 6],
+}
+
+impl MRAE {
+    pub fn new(pswaption_mkt: [[f64; 6]; 6]) -> Self {
+        MRAE { pswaption: [[f64::NAN; 6]; 6], pswaption_mkt: pswaption_mkt }
+    }
+    pub fn forward(&mut self, pswaption: [[f64; 6]; 6]) -> f64 {
+        self.pswaption = pswaption;
+
+        let mut out = 0.0;
+        for i in 0..6 {
+            for j in 0..6 {
+                out += (pswaption[i][j] - self.pswaption_mkt[i][j]).abs()/self.pswaption_mkt[i][j];
+            }
+        }
+        out /= 36.0;
+        return out;
+    }
+    pub fn backward(&self, dout: f64) -> [[f64; 6]; 6] {
+        let mut dpswaption = [[0.0; 6]; 6];
+        for i in 0..6 {
+            for j in 0..6 {
+                dpswaption[i][j] = if self.pswaption[i][j] >= self.pswaption_mkt[i][j] { dout/self.pswaption_mkt[i][j]/36.0 } else { -dout/self.pswaption_mkt[i][j]/36.0 };
             }
         }
         return dpswaption;

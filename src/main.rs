@@ -20,7 +20,7 @@ fn main() {
     ];
 
     let mut mat: f64;
-    let lr = 1e-11;
+    let lr = 1e-6;
 
     fn fswap(t: f64, tenor: f64, ts: TermStructure) -> f64 {
         let mut denom = 0.0;
@@ -48,22 +48,24 @@ fn main() {
         }
     }
 
+    // let params = [0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01];
+    let params = [0.0001, 0.0257805177740151, 0.0220240360585928, 0.01871070685577449, 0.025384040029662124, 0.018243153398688223, 0.01526385486030873];
+    let mut alpha = params[0];
+    let mut sigma1 = params[1];
+    let mut sigma2 = params[2];
+    let mut sigma3 = params[3];
+    let mut sigma5 = params[4];
+    let mut sigma7 = params[5];
+    let mut sigma10 = params[6];
 
-    // let mut alpha = 0.00457;
-    // let mut sigma1 = 0.0049;
-    // let mut sigma2 = 0.00651;
-    // let mut sigma3 = 0.00631;
-    // let mut sigma5 = 0.00465;
-    // let mut sigma7 = 0.00562;
-    // let mut sigma10 = 0.00405;
-
-    let mut alpha = 0.12049981326464214;
-    let mut sigma1 = 0.028334619475756304;
-    let mut sigma2 = 0.021979378932184726;
-    let mut sigma3 = 0.015676639260533694;
-    let mut sigma5 = 0.017496990061379867;
-    let mut sigma7 = 0.014653673743172198;
-    let mut sigma10 = 0.010025498885837395;
+    // let mut alpha = 0.12049981326464214;
+    // let mut sigma1 = 0.028334619475756304;
+    // let mut sigma2 = 0.021979378932184726;
+    // let mut sigma3 = 0.015676639260533694;
+    // let mut sigma5 = 0.017496990061379867;
+    // let mut sigma7 = 0.014653673743172198;
+    // let mut sigma10 = 0.010025498885837395;
+    
 
     for _ in 0..100000 {
 
@@ -308,6 +310,7 @@ fn main() {
 
         // 1.7. Layer 5
         let mut l5_mrse = MRSE::new(pswaption_mkt);
+        let mut l5_mrae = MRAE::new(pswaption_mkt);
 
 
 
@@ -801,9 +804,10 @@ fn main() {
         [m7_t1_pswaption, m7_t2_pswaption, m7_t3_pswaption, m7_t5_pswaption, m7_t7_pswaption, m7_t10_pswaption],
         [m10_t1_pswaption, m10_t2_pswaption, m10_t3_pswaption, m10_t5_pswaption, m10_t7_pswaption, m10_t10_pswaption]];
 
-        
         let mrse = l5_mrse.forward(pswaption_hw);
         print!("MRSE: {:?}, ", mrse);
+        let mrae = l5_mrae.forward(pswaption_hw);
+        print!("MRAE: {:?}, ", mrae);
         
         
         // 3. Backpropagation
@@ -815,8 +819,9 @@ fn main() {
         let mut dsigma7 = 0.0;
         let mut dsigma10 = 0.0;
         
-        // 3.1. Layer 5
+        // 3.1. Layer 5 (OK)
         let l4_dpswaption = l5_mrse.backward(1.0);
+        // let l4_dpswaption = l5_mrae.backward(1.0);
 
         // 3.2. Option Maturity 1
         // 3.2.1. Layer 4
@@ -828,7 +833,7 @@ fn main() {
         let (l3_m1_t10_da, l3_m1_t10_db, l3_m1_t10_dvp, l3_m1_t10_drstar) = l4_m1_t10_pswaption.backward(l4_dpswaption[0][5]);
         
         
-        // 3.2.2. Layer 3
+        // 3.2.2. Layer 3 (OK)
         let (l2_m1_t1_da, l2_m1_t1_db) = l3_m1_t1_rstar.backward(l3_m1_t1_drstar);
         let (l2_m1_t2_da, l2_m1_t2_db) = l3_m1_t2_rstar.backward(l3_m1_t2_drstar);
         let (l2_m1_t3_da, l2_m1_t3_db) = l3_m1_t3_rstar.backward(l3_m1_t3_drstar);
@@ -876,15 +881,15 @@ fn main() {
         
         for i in 0..40 {
             dalpha += l1_m1_b[i].backward(l1_m1_db[i]);
-            let tmp = l1_m1_vr.backward(l1_m1_dvr);
-            dalpha += tmp.0;
-            dsigma1 += tmp.1;
-            dsigma2 += tmp.2;
-            dsigma3 += tmp.3;
-            dsigma5 += tmp.4;
-            dsigma7 += tmp.5;
-            dsigma10 += tmp.6;
         }
+        let tmp = l1_m1_vr.backward(l1_m1_dvr);
+        dalpha += tmp.0;
+        dsigma1 += tmp.1;
+        dsigma2 += tmp.2;
+        dsigma3 += tmp.3;
+        dsigma5 += tmp.4;
+        dsigma7 += tmp.5;
+        dsigma10 += tmp.6;
 
         // 3.3. Option Maturity 2
         // 3.3.1. Layer 4
@@ -942,15 +947,15 @@ fn main() {
         
         for i in 0..40 {
             dalpha += l1_m2_b[i].backward(l1_m2_db[i]);
-            let tmp = l1_m2_vr.backward(l1_m2_dvr);
-            dalpha += tmp.0;
-            dsigma1 += tmp.1;
-            dsigma2 += tmp.2;
-            dsigma3 += tmp.3;
-            dsigma5 += tmp.4;
-            dsigma7 += tmp.5;
-            dsigma10 += tmp.6;
         }
+        let tmp = l1_m2_vr.backward(l1_m2_dvr);
+        dalpha += tmp.0;
+        dsigma1 += tmp.1;
+        dsigma2 += tmp.2;
+        dsigma3 += tmp.3;
+        dsigma5 += tmp.4;
+        dsigma7 += tmp.5;
+        dsigma10 += tmp.6;
 
         // 3.4. Option Maturity 3
         // 3.4.1. Layer 4
@@ -1008,15 +1013,15 @@ fn main() {
         
         for i in 0..40 {
             dalpha += l1_m3_b[i].backward(l1_m3_db[i]);
-            let tmp = l1_m3_vr.backward(l1_m3_dvr);
-            dalpha += tmp.0;
-            dsigma1 += tmp.1;
-            dsigma2 += tmp.2;
-            dsigma3 += tmp.3;
-            dsigma5 += tmp.4;
-            dsigma7 += tmp.5;
-            dsigma10 += tmp.6;
         }
+        let tmp = l1_m3_vr.backward(l1_m3_dvr);
+        dalpha += tmp.0;
+        dsigma1 += tmp.1;
+        dsigma2 += tmp.2;
+        dsigma3 += tmp.3;
+        dsigma5 += tmp.4;
+        dsigma7 += tmp.5;
+        dsigma10 += tmp.6;
 
         // 3.5. Option Maturity 5
         // 3.5.1. Layer 4
@@ -1074,15 +1079,15 @@ fn main() {
         
         for i in 0..40 {
             dalpha += l1_m5_b[i].backward(l1_m5_db[i]);
-            let tmp = l1_m5_vr.backward(l1_m5_dvr);
-            dalpha += tmp.0;
-            dsigma1 += tmp.1;
-            dsigma2 += tmp.2;
-            dsigma3 += tmp.3;
-            dsigma5 += tmp.4;
-            dsigma7 += tmp.5;
-            dsigma10 += tmp.6;
         }
+        let tmp = l1_m5_vr.backward(l1_m5_dvr);
+        dalpha += tmp.0;
+        dsigma1 += tmp.1;
+        dsigma2 += tmp.2;
+        dsigma3 += tmp.3;
+        dsigma5 += tmp.4;
+        dsigma7 += tmp.5;
+        dsigma10 += tmp.6;
 
         // 3.6. Option Maturity 7
         // 3.6.1. Layer 4
@@ -1140,15 +1145,15 @@ fn main() {
         
         for i in 0..40 {
             dalpha += l1_m7_b[i].backward(l1_m7_db[i]);
-            let tmp = l1_m7_vr.backward(l1_m7_dvr);
-            dalpha += tmp.0;
-            dsigma1 += tmp.1;
-            dsigma2 += tmp.2;
-            dsigma3 += tmp.3;
-            dsigma5 += tmp.4;
-            dsigma7 += tmp.5;
-            dsigma10 += tmp.6;
         }
+        let tmp = l1_m7_vr.backward(l1_m7_dvr);
+        dalpha += tmp.0;
+        dsigma1 += tmp.1;
+        dsigma2 += tmp.2;
+        dsigma3 += tmp.3;
+        dsigma5 += tmp.4;
+        dsigma7 += tmp.5;
+        dsigma10 += tmp.6;
 
         // 3.7. Option Maturity 10
         // 3.7.1. Layer 4
@@ -1206,15 +1211,15 @@ fn main() {
         
         for i in 0..40 {
             dalpha += l1_m10_b[i].backward(l1_m10_db[i]);
-            let tmp = l1_m10_vr.backward(l1_m10_dvr);
-            dalpha += tmp.0;
-            dsigma1 += tmp.1;
-            dsigma2 += tmp.2;
-            dsigma3 += tmp.3;
-            dsigma5 += tmp.4;
-            dsigma7 += tmp.5;
-            dsigma10 += tmp.6;
         }
+        let tmp = l1_m10_vr.backward(l1_m10_dvr);
+        dalpha += tmp.0;
+        dsigma1 += tmp.1;
+        dsigma2 += tmp.2;
+        dsigma3 += tmp.3;
+        dsigma5 += tmp.4;
+        dsigma7 += tmp.5;
+        dsigma10 += tmp.6;
 
         // 3.8. Update
         alpha -= dalpha*lr;
@@ -1226,9 +1231,8 @@ fn main() {
         sigma7 -= dsigma7*lr;
         sigma10 -= dsigma10*lr;
 
-        print!("|grad f(α, σ)| : {:?} ", (alpha*alpha + sigma1*sigma1 + sigma2*sigma2 + sigma3*sigma3 + sigma5*sigma5 + sigma7*sigma7 + sigma10*sigma10).sqrt());
+        print!("|grad f(α, σ)| : {:?}, ", (dalpha*dalpha + dsigma1*dsigma1 + dsigma2*dsigma2 + dsigma3*dsigma3 + dsigma5*dsigma5 + dsigma7*dsigma7 + dsigma10*dsigma10).sqrt());
         println!("Parameter : {:?}", (alpha, sigma1, sigma2, sigma3, sigma5, sigma7, sigma10));
-
+        // println!("Gradient : {:?}", (dalpha, dsigma1, dsigma2, dsigma3, dsigma5, dsigma7, dsigma10));
     }
-
 }

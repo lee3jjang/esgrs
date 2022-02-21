@@ -80,32 +80,32 @@ impl Vr {
         self.sigma10 = sigma10;
 
         let out = if self.t == 1.0 {
-            sigma1*sigma1/2.0/alpha*((2.0*alpha*self.t).exp()-(2.0*alpha*0.0).exp())
+            sigma1*sigma1/2.0/alpha*((2.0*alpha*1.0).exp()-(2.0*alpha*0.0).exp())
         } else if self.t == 2.0 {
             sigma1*sigma1/2.0/alpha*((2.0*alpha*1.0).exp()-(2.0*alpha*0.0).exp())
-            + sigma2*sigma2/2.0/alpha*((2.0*alpha*self.t).exp()-(2.0*alpha*1.0).exp())
+            + sigma2*sigma2/2.0/alpha*((2.0*alpha*2.0).exp()-(2.0*alpha*1.0).exp())
         } else if self.t == 3.0 {
             sigma1*sigma1/2.0/alpha*((2.0*alpha*1.0).exp()-(2.0*alpha*0.0).exp())
             + sigma2*sigma2/2.0/alpha*((2.0*alpha*2.0).exp()-(2.0*alpha*1.0).exp())
-            + sigma3*sigma3/2.0/alpha*((2.0*alpha*self.t).exp()-(2.0*alpha*2.0).exp())
+            + sigma3*sigma3/2.0/alpha*((2.0*alpha*3.0).exp()-(2.0*alpha*2.0).exp())
         } else if self.t == 5.0 {
             sigma1*sigma1/2.0/alpha*((2.0*alpha*1.0).exp()-(2.0*alpha*0.0).exp())
             + sigma2*sigma2/2.0/alpha*((2.0*alpha*2.0).exp()-(2.0*alpha*1.0).exp())
             + sigma3*sigma3/2.0/alpha*((2.0*alpha*3.0).exp()-(2.0*alpha*2.0).exp())
-            + sigma5*sigma5/2.0/alpha*((2.0*alpha*self.t).exp()-(2.0*alpha*3.0).exp())
+            + sigma5*sigma5/2.0/alpha*((2.0*alpha*5.0).exp()-(2.0*alpha*3.0).exp())
         } else if self.t == 7.0 {
             sigma1*sigma1/2.0/alpha*((2.0*alpha*1.0).exp()-(2.0*alpha*0.0).exp())
             + sigma2*sigma2/2.0/alpha*((2.0*alpha*2.0).exp()-(2.0*alpha*1.0).exp())
             + sigma3*sigma3/2.0/alpha*((2.0*alpha*3.0).exp()-(2.0*alpha*2.0).exp())
             + sigma5*sigma5/2.0/alpha*((2.0*alpha*5.0).exp()-(2.0*alpha*3.0).exp())
-            + sigma7*sigma7/2.0/alpha*((2.0*alpha*self.t).exp()-(2.0*alpha*5.0).exp())
+            + sigma7*sigma7/2.0/alpha*((2.0*alpha*7.0).exp()-(2.0*alpha*5.0).exp())
         } else if self.t == 10.0 {
             sigma1*sigma1/2.0/alpha*((2.0*alpha*1.0).exp()-(2.0*alpha*0.0).exp())
             + sigma2*sigma2/2.0/alpha*((2.0*alpha*2.0).exp()-(2.0*alpha*1.0).exp())
             + sigma3*sigma3/2.0/alpha*((2.0*alpha*3.0).exp()-(2.0*alpha*2.0).exp())
             + sigma5*sigma5/2.0/alpha*((2.0*alpha*5.0).exp()-(2.0*alpha*3.0).exp())
             + sigma7*sigma7/2.0/alpha*((2.0*alpha*7.0).exp()-(2.0*alpha*5.0).exp())
-            + sigma10*sigma10/2.0/alpha*((2.0*alpha*self.t).exp()-(2.0*alpha*7.0).exp())
+            + sigma10*sigma10/2.0/alpha*((2.0*alpha*10.0).exp()-(2.0*alpha*7.0).exp())
         } else {
             panic!("Vr(t) domain error");
         };
@@ -113,8 +113,8 @@ impl Vr {
     }
     pub fn backward(&self, dout: f64) -> (f64, f64, f64, f64, f64, f64, f64) {
         let (dalpha, dsigma1, dsigma2, dsigma3, dsigma5, dsigma7, dsigma10) = if self.t == 1.0 {
-            let dalpha = -self.sigma1*self.sigma1/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*self.t).exp()-(2.0*self.alpha*0.0).exp()) + self.sigma1*self.sigma1/self.alpha*(self.t*(2.0*self.t*self.alpha).exp()-0.0*(2.0*0.0*self.alpha).exp());
-            let dsigma1 = self.sigma1/self.alpha*((2.0*self.alpha*self.t).exp()-(2.0*self.alpha*0.0).exp());
+            let dalpha = -self.sigma1*self.sigma1/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp()) + self.sigma1*self.sigma1/self.alpha*(1.0*(2.0*1.0*self.alpha).exp()-0.0*(2.0*0.0*self.alpha).exp());
+            let dsigma1 = self.sigma1/self.alpha*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp());
             let dsigma2 = 0.0;
             let dsigma3 = 0.0;
             let dsigma5 = 0.0;
@@ -123,9 +123,9 @@ impl Vr {
             (dalpha*dout, dsigma1*dout, dsigma2*dout, dsigma3*dout, dsigma5*dout, dsigma7*dout, dsigma10*dout)
         } else if self.t == 2.0 {
             let dalpha = -self.sigma1*self.sigma1/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp()) + self.sigma1*self.sigma1/self.alpha*(1.0*(2.0*1.0*self.alpha).exp()-0.0*(2.0*0.0*self.alpha).exp())
-            -self.sigma2*self.sigma2/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*self.t).exp()-(2.0*self.alpha*1.0).exp()) + self.sigma2*self.sigma2/self.alpha*(self.t*(2.0*self.t*self.alpha).exp()-1.0*(2.0*1.0*self.alpha).exp());
+            -self.sigma2*self.sigma2/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp()) + self.sigma2*self.sigma2/self.alpha*(2.0*(2.0*2.0*self.alpha).exp()-1.0*(2.0*1.0*self.alpha).exp());
             let dsigma1 = self.sigma1/self.alpha*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp());
-            let dsigma2 = self.sigma2/self.alpha*((2.0*self.alpha*self.t).exp()-(2.0*self.alpha*1.0).exp());
+            let dsigma2 = self.sigma2/self.alpha*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp());
             let dsigma3 = 0.0;
             let dsigma5 = 0.0;
             let dsigma7 = 0.0;
@@ -134,10 +134,10 @@ impl Vr {
         } else if self.t == 3.0 {
             let dalpha = -self.sigma1*self.sigma1/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp()) + self.sigma1*self.sigma1/self.alpha*(1.0*(2.0*1.0*self.alpha).exp()-0.0*(2.0*0.0*self.alpha).exp())
             -self.sigma2*self.sigma2/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp()) + self.sigma2*self.sigma2/self.alpha*(2.0*(2.0*2.0*self.alpha).exp()-1.0*(2.0*1.0*self.alpha).exp())
-            -self.sigma3*self.sigma3/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*self.t).exp()-(2.0*self.alpha*2.0).exp()) + self.sigma3*self.sigma3/self.alpha*(self.t*(2.0*self.t*self.alpha).exp()-2.0*(2.0*2.0*self.alpha).exp());
+            -self.sigma3*self.sigma3/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*3.0).exp()-(2.0*self.alpha*2.0).exp()) + self.sigma3*self.sigma3/self.alpha*(3.0*(2.0*3.0*self.alpha).exp()-2.0*(2.0*2.0*self.alpha).exp());
             let dsigma1 = self.sigma1/self.alpha*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp());
             let dsigma2 = self.sigma2/self.alpha*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp());
-            let dsigma3 = self.sigma3/self.alpha*((2.0*self.alpha*self.t).exp()-(2.0*self.alpha*2.0).exp());
+            let dsigma3 = self.sigma3/self.alpha*((2.0*self.alpha*3.0).exp()-(2.0*self.alpha*2.0).exp());
             let dsigma5 = 0.0;
             let dsigma7 = 0.0;
             let dsigma10 = 0.0;
@@ -146,11 +146,11 @@ impl Vr {
             let dalpha = -self.sigma1*self.sigma1/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp()) + self.sigma1*self.sigma1/self.alpha*(1.0*(2.0*1.0*self.alpha).exp()-0.0*(2.0*0.0*self.alpha).exp())
             -self.sigma2*self.sigma2/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp()) + self.sigma2*self.sigma2/self.alpha*(2.0*(2.0*2.0*self.alpha).exp()-1.0*(2.0*1.0*self.alpha).exp())
             -self.sigma3*self.sigma3/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*3.0).exp()-(2.0*self.alpha*2.0).exp()) + self.sigma3*self.sigma3/self.alpha*(3.0*(2.0*3.0*self.alpha).exp()-2.0*(2.0*2.0*self.alpha).exp())
-            -self.sigma5*self.sigma5/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*self.t).exp()-(2.0*self.alpha*3.0).exp()) + self.sigma5*self.sigma5/self.alpha*(self.t*(2.0*self.t*self.alpha).exp()-3.0*(2.0*3.0*self.alpha).exp());
+            -self.sigma5*self.sigma5/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*5.0).exp()-(2.0*self.alpha*3.0).exp()) + self.sigma5*self.sigma5/self.alpha*(5.0*(2.0*5.0*self.alpha).exp()-3.0*(2.0*3.0*self.alpha).exp());
             let dsigma1 = self.sigma1/self.alpha*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp());
             let dsigma2 = self.sigma2/self.alpha*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp());
             let dsigma3 = self.sigma3/self.alpha*((2.0*self.alpha*3.0).exp()-(2.0*self.alpha*2.0).exp());
-            let dsigma5 = self.sigma5/self.alpha*((2.0*self.alpha*self.t).exp()-(2.0*self.alpha*3.0).exp());
+            let dsigma5 = self.sigma5/self.alpha*((2.0*self.alpha*5.0).exp()-(2.0*self.alpha*3.0).exp());
             let dsigma7 = 0.0;
             let dsigma10 = 0.0;
             (dalpha*dout, dsigma1*dout, dsigma2*dout, dsigma3*dout, dsigma5*dout, dsigma7*dout, dsigma10*dout)
@@ -159,12 +159,12 @@ impl Vr {
             -self.sigma2*self.sigma2/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp()) + self.sigma2*self.sigma2/self.alpha*(2.0*(2.0*2.0*self.alpha).exp()-1.0*(2.0*1.0*self.alpha).exp())
             -self.sigma3*self.sigma3/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*3.0).exp()-(2.0*self.alpha*2.0).exp()) + self.sigma3*self.sigma3/self.alpha*(3.0*(2.0*3.0*self.alpha).exp()-2.0*(2.0*2.0*self.alpha).exp())
             -self.sigma5*self.sigma5/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*5.0).exp()-(2.0*self.alpha*3.0).exp()) + self.sigma5*self.sigma5/self.alpha*(5.0*(2.0*5.0*self.alpha).exp()-3.0*(2.0*3.0*self.alpha).exp())
-            -self.sigma7*self.sigma7/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*self.t).exp()-(2.0*self.alpha*5.0).exp()) + self.sigma7*self.sigma7/self.alpha*(self.t*(2.0*self.t*self.alpha).exp()-5.0*(2.0*5.0*self.alpha).exp());
+            -self.sigma7*self.sigma7/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*7.0).exp()-(2.0*self.alpha*5.0).exp()) + self.sigma7*self.sigma7/self.alpha*(7.0*(2.0*7.0*self.alpha).exp()-5.0*(2.0*5.0*self.alpha).exp());
             let dsigma1 = self.sigma1/self.alpha*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp());
             let dsigma2 = self.sigma2/self.alpha*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp());
             let dsigma3 = self.sigma3/self.alpha*((2.0*self.alpha*3.0).exp()-(2.0*self.alpha*2.0).exp());
             let dsigma5 = self.sigma5/self.alpha*((2.0*self.alpha*5.0).exp()-(2.0*self.alpha*3.0).exp());
-            let dsigma7 = self.sigma7/self.alpha*((2.0*self.alpha*self.t).exp()-(2.0*self.alpha*5.0).exp());
+            let dsigma7 = self.sigma7/self.alpha*((2.0*self.alpha*7.0).exp()-(2.0*self.alpha*5.0).exp());
             let dsigma10 = 0.0;
             (dalpha*dout, dsigma1*dout, dsigma2*dout, dsigma3*dout, dsigma5*dout, dsigma7*dout, dsigma10*dout)
         } else if self.t == 10.0 {
@@ -173,13 +173,13 @@ impl Vr {
             -self.sigma3*self.sigma3/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*3.0).exp()-(2.0*self.alpha*2.0).exp()) + self.sigma3*self.sigma3/self.alpha*(3.0*(2.0*3.0*self.alpha).exp()-2.0*(2.0*2.0*self.alpha).exp())
             -self.sigma5*self.sigma5/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*5.0).exp()-(2.0*self.alpha*3.0).exp()) + self.sigma5*self.sigma5/self.alpha*(5.0*(2.0*5.0*self.alpha).exp()-3.0*(2.0*3.0*self.alpha).exp())
             -self.sigma7*self.sigma7/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*7.0).exp()-(2.0*self.alpha*5.0).exp()) + self.sigma7*self.sigma7/self.alpha*(7.0*(2.0*7.0*self.alpha).exp()-5.0*(2.0*5.0*self.alpha).exp())
-            -self.sigma10*self.sigma10/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*self.t).exp()-(2.0*self.alpha*7.0).exp()) + self.sigma10*self.sigma10/self.alpha*(self.t*(2.0*self.t*self.alpha).exp()-7.0*(2.0*7.0*self.alpha).exp());
+            -self.sigma10*self.sigma10/(2.0*self.alpha*self.alpha)*((2.0*self.alpha*10.0).exp()-(2.0*self.alpha*7.0).exp()) + self.sigma10*self.sigma10/self.alpha*(10.0*(2.0*10.0*self.alpha).exp()-7.0*(2.0*7.0*self.alpha).exp());
             let dsigma1 = self.sigma1/self.alpha*((2.0*self.alpha*1.0).exp()-(2.0*self.alpha*0.0).exp());
             let dsigma2 = self.sigma2/self.alpha*((2.0*self.alpha*2.0).exp()-(2.0*self.alpha*1.0).exp());
             let dsigma3 = self.sigma3/self.alpha*((2.0*self.alpha*3.0).exp()-(2.0*self.alpha*2.0).exp());
             let dsigma5 = self.sigma5/self.alpha*((2.0*self.alpha*5.0).exp()-(2.0*self.alpha*3.0).exp());
             let dsigma7 = self.sigma7/self.alpha*((2.0*self.alpha*7.0).exp()-(2.0*self.alpha*5.0).exp());
-            let dsigma10 = self.sigma10/self.alpha*((2.0*self.alpha*self.t).exp()-(2.0*self.alpha*7.0).exp());
+            let dsigma10 = self.sigma10/self.alpha*((2.0*self.alpha*10.0).exp()-(2.0*self.alpha*7.0).exp());
             (dalpha*dout, dsigma1*dout, dsigma2*dout, dsigma3*dout, dsigma5*dout, dsigma7*dout, dsigma10*dout)
         } else {
             panic!("Vr(t) domain error");
@@ -603,7 +603,7 @@ impl PSwaptionT1 {
         let p_tf = ts.p[(12.0*t) as usize];
         let mut p_ti = [0.0; 4];
         for i in 0..num {
-            p_ti[i] = ts.p[(12.0*t) as usize + i + 1];
+            p_ti[i] = ts.p[(12.0*t) as usize + 3*(i + 1)];
         } 
         PSwaptionT1 { a: [f64::NAN; 4], b: [f64::NAN; 4], vp: [f64::NAN; 4], rstar: f64::NAN, k: k, p_tf: p_tf, p_ti: p_ti, x: [f64::NAN; 4], dplus: [f64::NAN; 4], dminus: [f64::NAN; 4] }
     }
@@ -616,14 +616,13 @@ impl PSwaptionT1 {
         let mut out = 0.0;
         let num = 4;
         for i in 0..num {
+            let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
             self.x[i] = (a[i]-b[i]*rstar).exp();
-            let ci = if i == num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
             self.dplus[i] = (self.p_tf/self.p_ti[i]*self.x[i]).ln()/vp[i].sqrt() + 0.5*vp[i].sqrt();
             self.dminus[i] = self.dplus[i] - vp[i].sqrt();
             let zbp = self.x[i]*self.p_tf*norm_cdf(self.dplus[i]) - self.p_ti[i]*norm_cdf(self.dminus[i]);
             out += ci*zbp;
         }
-        
         return out;
     }
     pub fn backward(&self, dout: f64) -> ([f64; 4], [f64; 4], [f64; 4], f64) {
@@ -676,7 +675,7 @@ impl PSwaptionT2 {
         let p_tf = ts.p[(12.0*t) as usize];
         let mut p_ti = [0.0; 8];
         for i in 0..num {
-            p_ti[i] = ts.p[(12.0*t) as usize + i + 1];
+            p_ti[i] = ts.p[(12.0*t) as usize + 3*(i + 1)];
         } 
         PSwaptionT2 { a: [f64::NAN; 8], b: [f64::NAN; 8], vp: [f64::NAN; 8], rstar: f64::NAN, k: k, p_tf: p_tf, p_ti: p_ti, x: [f64::NAN; 8], dplus: [f64::NAN; 8], dminus: [f64::NAN; 8] }
     }
@@ -689,8 +688,8 @@ impl PSwaptionT2 {
         let mut out = 0.0;
         let num = 8;
         for i in 0..num {
+            let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
             self.x[i] = (a[i]-b[i]*rstar).exp();
-            let ci = if i == num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
             self.dplus[i] = (self.p_tf/self.p_ti[i]*self.x[i]).ln()/vp[i].sqrt() + 0.5*vp[i].sqrt();
             self.dminus[i] = self.dplus[i] - vp[i].sqrt();
             let zbp = self.x[i]*self.p_tf*norm_cdf(self.dplus[i]) - self.p_ti[i]*norm_cdf(self.dminus[i]);
@@ -750,7 +749,7 @@ impl PSwaptionT3 {
         let p_tf = ts.p[(12.0*t) as usize];
         let mut p_ti = [0.0; 12];
         for i in 0..num {
-            p_ti[i] = ts.p[(12.0*t) as usize + i + 1];
+            p_ti[i] = ts.p[(12.0*t) as usize + 3*(i + 1)];
         } 
         PSwaptionT3 { a: [f64::NAN; 12], b: [f64::NAN; 12], vp: [f64::NAN; 12], rstar: f64::NAN, k: k, p_tf: p_tf, p_ti: p_ti, x: [f64::NAN; 12], dplus: [f64::NAN; 12], dminus: [f64::NAN; 12] }
     }
@@ -763,8 +762,8 @@ impl PSwaptionT3 {
         let mut out = 0.0;
         let num = 12;
         for i in 0..num {
+            let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
             self.x[i] = (a[i]-b[i]*rstar).exp();
-            let ci = if i == num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
             self.dplus[i] = (self.p_tf/self.p_ti[i]*self.x[i]).ln()/vp[i].sqrt() + 0.5*vp[i].sqrt();
             self.dminus[i] = self.dplus[i] - vp[i].sqrt();
             let zbp = self.x[i]*self.p_tf*norm_cdf(self.dplus[i]) - self.p_ti[i]*norm_cdf(self.dminus[i]);
@@ -823,7 +822,7 @@ impl PSwaptionT5 {
         let p_tf = ts.p[(12.0*t) as usize];
         let mut p_ti = [0.0; 20];
         for i in 0..num {
-            p_ti[i] = ts.p[(12.0*t) as usize + i + 1];
+            p_ti[i] = ts.p[(12.0*t) as usize + 3*(i + 1)];
         } 
         PSwaptionT5 { a: [f64::NAN; 20], b: [f64::NAN; 20], vp: [f64::NAN; 20], rstar: f64::NAN, k: k, p_tf: p_tf, p_ti: p_ti, x: [f64::NAN; 20], dplus: [f64::NAN; 20], dminus: [f64::NAN; 20] }
     }
@@ -836,8 +835,8 @@ impl PSwaptionT5 {
         let mut out = 0.0;
         let num = 20;
         for i in 0..num {
+            let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
             self.x[i] = (a[i]-b[i]*rstar).exp();
-            let ci = if i == num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
             self.dplus[i] = (self.p_tf/self.p_ti[i]*self.x[i]).ln()/vp[i].sqrt() + 0.5*vp[i].sqrt();
             self.dminus[i] = self.dplus[i] - vp[i].sqrt();
             let zbp = self.x[i]*self.p_tf*norm_cdf(self.dplus[i]) - self.p_ti[i]*norm_cdf(self.dminus[i]);
@@ -896,7 +895,7 @@ impl PSwaptionT7 {
         let p_tf = ts.p[(12.0*t) as usize];
         let mut p_ti = [0.0; 28];
         for i in 0..num {
-            p_ti[i] = ts.p[(12.0*t) as usize + i + 1];
+            p_ti[i] = ts.p[(12.0*t) as usize + 3*(i + 1)];
         } 
         PSwaptionT7 { a: [f64::NAN; 28], b: [f64::NAN; 28], vp: [f64::NAN; 28], rstar: f64::NAN, k: k, p_tf: p_tf, p_ti: p_ti, x: [f64::NAN; 28], dplus: [f64::NAN; 28], dminus: [f64::NAN; 28] }
     }
@@ -909,8 +908,8 @@ impl PSwaptionT7 {
         let mut out = 0.0;
         let num = 28;
         for i in 0..num {
+            let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
             self.x[i] = (a[i]-b[i]*rstar).exp();
-            let ci = if i == num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
             self.dplus[i] = (self.p_tf/self.p_ti[i]*self.x[i]).ln()/vp[i].sqrt() + 0.5*vp[i].sqrt();
             self.dminus[i] = self.dplus[i] - vp[i].sqrt();
             let zbp = self.x[i]*self.p_tf*norm_cdf(self.dplus[i]) - self.p_ti[i]*norm_cdf(self.dminus[i]);
@@ -969,7 +968,7 @@ impl PSwaptionT10 {
         let p_tf = ts.p[(12.0*t) as usize];
         let mut p_ti = [0.0; 40];
         for i in 0..num {
-            p_ti[i] = ts.p[(12.0*t) as usize + i + 1];
+            p_ti[i] = ts.p[(12.0*t) as usize + 3*(i + 1)];
         } 
         PSwaptionT10 { a: [f64::NAN; 40], b: [f64::NAN; 40], vp: [f64::NAN; 40], rstar: f64::NAN, k: k, p_tf: p_tf, p_ti: p_ti, x: [f64::NAN; 40], dplus: [f64::NAN; 40], dminus: [f64::NAN; 40] }
     }
@@ -982,8 +981,8 @@ impl PSwaptionT10 {
         let mut out = 0.0;
         let num = 40;
         for i in 0..num {
+            let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
             self.x[i] = (a[i]-b[i]*rstar).exp();
-            let ci = if i == num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
             self.dplus[i] = (self.p_tf/self.p_ti[i]*self.x[i]).ln()/vp[i].sqrt() + 0.5*vp[i].sqrt();
             self.dminus[i] = self.dplus[i] - vp[i].sqrt();
             let zbp = self.x[i]*self.p_tf*norm_cdf(self.dplus[i]) - self.p_ti[i]*norm_cdf(self.dminus[i]);

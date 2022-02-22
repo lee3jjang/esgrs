@@ -244,7 +244,7 @@ impl RstarT1 {
     pub fn forward(&mut self, a: [f64; 4], b: [f64; 4]) -> f64 {
         self.a = a;
         self.b = b;
-        self.out = JamshidianT1 { a: self.a, b: self.b, k: self.k }.gss(0.0, 1.0);
+        self.out = JamshidianT1 { a: self.a, b: self.b, k: self.k }.gss(-1.0, 1.0);
         return self.out;
     }
     pub fn backward(&self, dout: f64) -> ([f64; 4], [f64; 4]) {
@@ -298,7 +298,7 @@ impl RstarT2 {
     pub fn forward(&mut self, a: [f64; 8], b: [f64; 8]) -> f64 {
         self.a = a;
         self.b = b;
-        self.out = JamshidianT2 { a: self.a, b: self.b, k: self.k }.gss(0.0, 1.0);
+        self.out = JamshidianT2 { a: self.a, b: self.b, k: self.k }.gss(-1.0, 1.0);
         return self.out;
     }
     pub fn backward(&self, dout: f64) -> ([f64; 8], [f64; 8]) {
@@ -352,7 +352,7 @@ impl RstarT3 {
     pub fn forward(&mut self, a: [f64; 12], b: [f64; 12]) -> f64 {
         self.a = a;
         self.b = b;
-        self.out = JamshidianT3 { a: self.a, b: self.b, k: self.k }.gss(0.0, 1.0);
+        self.out = JamshidianT3 { a: self.a, b: self.b, k: self.k }.gss(-1.0, 1.0);
         return self.out;
     }
     pub fn backward(&self, dout: f64) -> ([f64; 12], [f64; 12]) {
@@ -406,7 +406,7 @@ impl RstarT5 {
     pub fn forward(&mut self, a: [f64; 20], b: [f64; 20]) -> f64 {
         self.a = a;
         self.b = b;
-        self.out = JamshidianT5 { a: self.a, b: self.b, k: self.k }.gss(0.0, 1.0);
+        self.out = JamshidianT5 { a: self.a, b: self.b, k: self.k }.gss(-1.0, 1.0);
         return self.out;
     }
     pub fn backward(&self, dout: f64) -> ([f64; 20], [f64; 20]) {
@@ -460,7 +460,7 @@ impl RstarT7 {
     pub fn forward(&mut self, a: [f64; 28], b: [f64; 28]) -> f64 {
         self.a = a;
         self.b = b;
-        self.out = JamshidianT7 { a: self.a, b: self.b, k: self.k }.gss(0.0, 1.0);
+        self.out = JamshidianT7 { a: self.a, b: self.b, k: self.k }.gss(-1.0, 1.0);
         return self.out;
     }
     pub fn backward(&self, dout: f64) -> ([f64; 28], [f64; 28]) {
@@ -514,7 +514,7 @@ impl RstarT10 {
     pub fn forward(&mut self, a: [f64; 40], b: [f64; 40]) -> f64 {
         self.a = a;
         self.b = b;
-        self.out = JamshidianT10 { a: self.a, b: self.b, k: self.k }.gss(0.0, 1.0);
+        self.out = JamshidianT10 { a: self.a, b: self.b, k: self.k }.gss(-1.0, 1.0);
         return self.out;
     }
     pub fn backward(&self, dout: f64) -> ([f64; 40], [f64; 40]) {

@@ -1,12 +1,7 @@
 use crate::optim::UniFn;
+use crate::ts::TermStructure;
 use crate::stats::{norm_cdf, norm_pdf};
 
-#[derive(Debug, Copy, Clone)]
-pub struct TermStructure {
-    pub p: [f64; 241],
-    pub f: [f64; 241],
-    pub df: [f64; 241],
-}
 
 /// **B 노드**
 /// 

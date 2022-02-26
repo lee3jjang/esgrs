@@ -141,7 +141,6 @@ pub fn smith_wilson_ytm(ltfr: f64, alpha: f64, tenor: Vec<f64>, ytm: Vec<f64>, f
     TermStructure { p: p, f: [0.0; 241] }
 }
 
-
 trait Matrix {
     fn mul(&self, _rhs: &Vec<Vec<f64>>) -> Vec<Vec<f64>>;
     fn tp(&self) -> Vec<Vec<f64>>;

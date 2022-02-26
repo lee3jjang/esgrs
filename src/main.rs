@@ -12,36 +12,32 @@ use log::{debug, error, info, trace, warn};
 
 fn main() {
 
-    // 1. Config
+    // 1. Config & Logging
     let mut file = File::open("config.yaml").unwrap();
     let mut config_str = String::new();
     file.read_to_string(&mut config_str).unwrap();
     let config = &YamlLoader::load_from_str(&config_str).unwrap()[0];
-    let base_yymm = config["baseYymm"].as_str().unwrap();
     let lr = config["learningRate"].as_f64().unwrap();
     let tol: f64 = config["tolerance"].as_f64().unwrap();
+    log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
+
+    let base_yymm = "202111";
     
-    // 2. Swaption
-    let file = File::open("swaption.csv").unwrap();
-    let swaption_vol_mkt = get_swaption_vol(base_yymm, file);
-    // println!("{:?}", swaption_vol_mkt);
-    
-    // 3. Yield
+    // 2. Yield
     let file = File::open("yield.csv").unwrap();
     let ytm = get_ytm(base_yymm, file);
-    
-    // 4. Logging
-    log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
-    
-    let alpha = 0.1;
     let tenor = vec![0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0, 7.0, 10.0, 15.0, 20.0, 30.0, 50.0];
     let ytm = Vec::from(ytm);
     let ltfr = ytm[ytm.len()-1];
+    let alpha0 = 0.1;
     let freq = 2.0;
-    let alpha = 0.1;
 
-    let p = smith_wilson_ytm(ltfr, alpha, tenor, ytm, freq);
-    // println!("{:?}", p);
+    let p = smith_wilson_ytm(ltfr, alpha0, tenor, ytm, freq);
+    println!("{:?}", p);
+
+    // 3. Swaption
+    let file = File::open("swaption.csv").unwrap();
+    let swaption_vol_mkt = get_swaption_vol(base_yymm, file);
 
     // let (tx, rx) = mpsc::channel();
     // // let tx1 = tx.clone();
@@ -72,6 +68,7 @@ fn main() {
 
 }
 
+
 fn get_swaption_vol(base_yymm: &str, file: File) -> [f64; 36] {
     let mut rdr = csv::Reader::from_reader(file);
     let mut swaption_vol_mkt = [0.0; 36];
@@ -86,14 +83,15 @@ fn get_swaption_vol(base_yymm: &str, file: File) -> [f64; 36] {
     swaption_vol_mkt
 }
 
-fn get_ytm(base_yymm: &str, file: File) -> [f64; 16] {
+fn get_ytm(base_yymm: &str, file: File) -> Vec<f64> {
     let mut rdr = csv::Reader::from_reader(file);
-    let mut ytm = [0.0; 16];
+    let mut ytm = Vec::new();
     for result in rdr.records() {
         let record = &result.unwrap();
+        let n = record.len();
         if &record[0] == base_yymm {
-            for i in 0..16 {
-                ytm[i] = record[i+1].parse::<f64>().unwrap_or_default();
+            for i in 1..n {
+                ytm.push(record[i].parse::<f64>().unwrap_or_default());
             }
         }
     }

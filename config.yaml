@@ -1,3 +1,2 @@
-baseYymm: '202112'
 learningRate: 1e-2
 tolerance: 1e-15

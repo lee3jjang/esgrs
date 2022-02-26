@@ -1,4 +1,5 @@
-use crate::optim::UniFn;
+use crate::optim::DiffUniFn;
+// use crate::optim::UniFn;
 use crate::ts::TermStructure;
 use crate::stats::{norm_cdf, norm_pdf};
 
@@ -239,7 +240,7 @@ impl RstarT1 {
     pub fn forward(&mut self, a: [f64; 4], b: [f64; 4]) -> f64 {
         self.a = a;
         self.b = b;
-        self.out = JamshidianT1 { a: self.a, b: self.b, k: self.k }.gss(-1.0, 1.0);
+        self.out = JamshidianT1 { a: self.a, b: self.b, k: self.k }.newton_raphson(-1.0);
         return self.out;
     }
     pub fn backward(&self, dout: f64) -> ([f64; 4], [f64; 4]) {
@@ -266,7 +267,19 @@ pub struct JamshidianT1 {
     k: f64,
 }
 
-impl UniFn for JamshidianT1 {
+// impl UniFn for JamshidianT1 {
+//     fn value(&self, r: f64) -> f64 {
+//         let num = 4;
+//         let mut eq: f64 = 0.0;
+//         for i in 0..num {
+//             let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
+//             eq += ci*(self.a[i]-self.b[i]*r).exp();
+//         }
+//         return (eq-1.0).abs();
+//     }
+// }
+
+impl DiffUniFn for JamshidianT1 {
     fn value(&self, r: f64) -> f64 {
         let num = 4;
         let mut eq: f64 = 0.0;
@@ -274,7 +287,16 @@ impl UniFn for JamshidianT1 {
             let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
             eq += ci*(self.a[i]-self.b[i]*r).exp();
         }
-        return (eq-1.0).abs();
+        return eq-1.0;
+    }
+    fn deriv(&self, r: f64) -> f64 {
+        let num = 4;
+        let mut eq: f64 = 0.0;
+        for i in 0..num {
+            let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
+            eq += ci*(self.a[i]-self.b[i]*r).exp()*(-self.b[i]);
+        }
+        return eq;
     }
 }
 
@@ -293,7 +315,7 @@ impl RstarT2 {
     pub fn forward(&mut self, a: [f64; 8], b: [f64; 8]) -> f64 {
         self.a = a;
         self.b = b;
-        self.out = JamshidianT2 { a: self.a, b: self.b, k: self.k }.gss(-1.0, 1.0);
+        self.out = JamshidianT2 { a: self.a, b: self.b, k: self.k }.newton_raphson(-1.0);
         return self.out;
     }
     pub fn backward(&self, dout: f64) -> ([f64; 8], [f64; 8]) {
@@ -320,7 +342,19 @@ pub struct JamshidianT2 {
     k: f64,
 }
 
-impl UniFn for JamshidianT2 {
+// impl UniFn for JamshidianT2 {
+//     fn value(&self, r: f64) -> f64 {
+//         let num = 8;
+//         let mut eq: f64 = 0.0;
+//         for i in 0..num {
+//             let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
+//             eq += ci*(self.a[i]-self.b[i]*r).exp();
+//         }
+//         return (eq-1.0).abs();
+//     }
+// }
+
+impl DiffUniFn for JamshidianT2 {
     fn value(&self, r: f64) -> f64 {
         let num = 8;
         let mut eq: f64 = 0.0;
@@ -328,7 +362,16 @@ impl UniFn for JamshidianT2 {
             let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
             eq += ci*(self.a[i]-self.b[i]*r).exp();
         }
-        return (eq-1.0).abs();
+        return eq-1.0;
+    }
+    fn deriv(&self, r: f64) -> f64 {
+        let num = 8;
+        let mut eq: f64 = 0.0;
+        for i in 0..num {
+            let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
+            eq += ci*(self.a[i]-self.b[i]*r).exp()*(-self.b[i]);
+        }
+        return eq;
     }
 }
 
@@ -347,7 +390,7 @@ impl RstarT3 {
     pub fn forward(&mut self, a: [f64; 12], b: [f64; 12]) -> f64 {
         self.a = a;
         self.b = b;
-        self.out = JamshidianT3 { a: self.a, b: self.b, k: self.k }.gss(-1.0, 1.0);
+        self.out = JamshidianT3 { a: self.a, b: self.b, k: self.k }.newton_raphson(-1.0);
         return self.out;
     }
     pub fn backward(&self, dout: f64) -> ([f64; 12], [f64; 12]) {
@@ -374,7 +417,19 @@ pub struct JamshidianT3 {
     k: f64,
 }
 
-impl UniFn for JamshidianT3 {
+// impl UniFn for JamshidianT3 {
+//     fn value(&self, r: f64) -> f64 {
+//         let num = 12;
+//         let mut eq: f64 = 0.0;
+//         for i in 0..num {
+//             let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
+//             eq += ci*(self.a[i]-self.b[i]*r).exp();
+//         }
+//         return (eq-1.0).abs();
+//     }
+// }
+
+impl DiffUniFn for JamshidianT3 {
     fn value(&self, r: f64) -> f64 {
         let num = 12;
         let mut eq: f64 = 0.0;
@@ -382,7 +437,16 @@ impl UniFn for JamshidianT3 {
             let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
             eq += ci*(self.a[i]-self.b[i]*r).exp();
         }
-        return (eq-1.0).abs();
+        return eq-1.0;
+    }
+    fn deriv(&self, r: f64) -> f64 {
+        let num = 12;
+        let mut eq: f64 = 0.0;
+        for i in 0..num {
+            let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
+            eq += ci*(self.a[i]-self.b[i]*r).exp()*(-self.b[i]);
+        }
+        return eq;
     }
 }
 
@@ -401,7 +465,7 @@ impl RstarT5 {
     pub fn forward(&mut self, a: [f64; 20], b: [f64; 20]) -> f64 {
         self.a = a;
         self.b = b;
-        self.out = JamshidianT5 { a: self.a, b: self.b, k: self.k }.gss(-1.0, 1.0);
+        self.out = JamshidianT5 { a: self.a, b: self.b, k: self.k }.newton_raphson(-1.0);
         return self.out;
     }
     pub fn backward(&self, dout: f64) -> ([f64; 20], [f64; 20]) {
@@ -428,7 +492,19 @@ pub struct JamshidianT5 {
     k: f64,
 }
 
-impl UniFn for JamshidianT5 {
+// impl UniFn for JamshidianT5 {
+//     fn value(&self, r: f64) -> f64 {
+//         let num = 20;
+//         let mut eq: f64 = 0.0;
+//         for i in 0..num {
+//             let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
+//             eq += ci*(self.a[i]-self.b[i]*r).exp();
+//         }
+//         return (eq-1.0).abs();
+//     }
+// }
+
+impl DiffUniFn for JamshidianT5 {
     fn value(&self, r: f64) -> f64 {
         let num = 20;
         let mut eq: f64 = 0.0;
@@ -436,7 +512,16 @@ impl UniFn for JamshidianT5 {
             let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
             eq += ci*(self.a[i]-self.b[i]*r).exp();
         }
-        return (eq-1.0).abs();
+        return eq-1.0;
+    }
+    fn deriv(&self, r: f64) -> f64 {
+        let num = 20;
+        let mut eq: f64 = 0.0;
+        for i in 0..num {
+            let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
+            eq += ci*(self.a[i]-self.b[i]*r).exp()*(-self.b[i]);
+        }
+        return eq;
     }
 }
 
@@ -455,7 +540,7 @@ impl RstarT7 {
     pub fn forward(&mut self, a: [f64; 28], b: [f64; 28]) -> f64 {
         self.a = a;
         self.b = b;
-        self.out = JamshidianT7 { a: self.a, b: self.b, k: self.k }.gss(-1.0, 1.0);
+        self.out = JamshidianT7 { a: self.a, b: self.b, k: self.k }.newton_raphson(-1.0);
         return self.out;
     }
     pub fn backward(&self, dout: f64) -> ([f64; 28], [f64; 28]) {
@@ -482,7 +567,19 @@ pub struct JamshidianT7 {
     k: f64,
 }
 
-impl UniFn for JamshidianT7 {
+// impl UniFn for JamshidianT7 {
+//     fn value(&self, r: f64) -> f64 {
+//         let num = 28;
+//         let mut eq: f64 = 0.0;
+//         for i in 0..num {
+//             let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
+//             eq += ci*(self.a[i]-self.b[i]*r).exp();
+//         }
+//         return (eq-1.0).abs();
+//     }
+// }
+
+impl DiffUniFn for JamshidianT7 {
     fn value(&self, r: f64) -> f64 {
         let num = 28;
         let mut eq: f64 = 0.0;
@@ -490,7 +587,16 @@ impl UniFn for JamshidianT7 {
             let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
             eq += ci*(self.a[i]-self.b[i]*r).exp();
         }
-        return (eq-1.0).abs();
+        return eq-1.0;
+    }
+    fn deriv(&self, r: f64) -> f64 {
+        let num = 28;
+        let mut eq: f64 = 0.0;
+        for i in 0..num {
+            let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
+            eq += ci*(self.a[i]-self.b[i]*r).exp()*(-self.b[i]);
+        }
+        return eq;
     }
 }
 
@@ -509,7 +615,7 @@ impl RstarT10 {
     pub fn forward(&mut self, a: [f64; 40], b: [f64; 40]) -> f64 {
         self.a = a;
         self.b = b;
-        self.out = JamshidianT10 { a: self.a, b: self.b, k: self.k }.gss(-1.0, 1.0);
+        self.out = JamshidianT10 { a: self.a, b: self.b, k: self.k }.newton_raphson(-1.0);
         return self.out;
     }
     pub fn backward(&self, dout: f64) -> ([f64; 40], [f64; 40]) {
@@ -536,7 +642,19 @@ pub struct JamshidianT10 {
     k: f64,
 }
 
-impl UniFn for JamshidianT10 {
+// impl UniFn for JamshidianT10 {
+//     fn value(&self, r: f64) -> f64 {
+//         let num = 40;
+//         let mut eq: f64 = 0.0;
+//         for i in 0..num {
+//             let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
+//             eq += ci*(self.a[i]-self.b[i]*r).exp();
+//         }
+//         return (eq-1.0).abs();
+//     }
+// }
+
+impl DiffUniFn for JamshidianT10 {
     fn value(&self, r: f64) -> f64 {
         let num = 40;
         let mut eq: f64 = 0.0;
@@ -544,7 +662,16 @@ impl UniFn for JamshidianT10 {
             let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
             eq += ci*(self.a[i]-self.b[i]*r).exp();
         }
-        return (eq-1.0).abs();
+        return eq-1.0;
+    }
+    fn deriv(&self, r: f64) -> f64 {
+        let num = 40;
+        let mut eq: f64 = 0.0;
+        for i in 0..num {
+            let ci = if i != num-1 { 0.25*self.k } else { 1.0+0.25*self.k };
+            eq += ci*(self.a[i]-self.b[i]*r).exp()*(-self.b[i]);
+        }
+        return eq;
     }
 }
 

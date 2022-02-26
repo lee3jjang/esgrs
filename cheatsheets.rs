@@ -22,6 +22,7 @@ fn main() {
     file.read_to_string(&mut config_str).unwrap();
     let config = &YamlLoader::load_from_str(&config_str).unwrap()[0];
     println!("{:?}", config["baseYymm"].as_str().unwrap());
+    println!("{:?}", config["learningRate"].as_f64());
 
     // 2. csv 읽기
     let file = File::open("uspop.csv").unwrap();

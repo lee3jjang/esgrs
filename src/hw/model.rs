@@ -19,6 +19,73 @@ fn pswaption_black(mat: f64, tenor: f64, black_vol: f64, ts: TermStructure) -> f
     return term1*(2.0*cum_prob-1.0)/0.25;
 }
 
+fn gd<F: Fn([f64; 7]) -> (f64, [f64; 7])>(step: F, p0: [f64; 7], mut lr: f64, tol: f64) -> [f64; 7] {
+    let mut p = p0;
+    
+    loop {
+        let (value, grad) = step(p);
+        
+        // Update
+        p[0] -= grad[0]*lr;
+        p[0] = p[0].max(0.0001);
+        p[1] -= grad[1]*lr;
+        p[2] -= grad[2]*lr;
+        p[3] -= grad[3]*lr;
+        p[4] -= grad[4]*lr;
+        p[5] -= grad[5]*lr;
+        p[6] -= grad[6]*lr;
+        
+        // Logging
+        let grad_norm = (grad[1]*grad[1] + grad[2]*grad[2] + grad[3]*grad[3] + grad[4]*grad[4] + grad[5]*grad[5] + grad[6]*grad[6]).sqrt();
+        print!("MRSE: {:<20}, ", value);
+        println!("|grad f(α, σ)| : {:?}, ", grad_norm);
+        println!("Parameter : {:?}", (p[0], p[1], p[2], p[3], p[4], p[5], p[6]));
+
+        // Exit
+        if grad_norm < tol {
+            break;
+        }
+    }
+    
+    p
+}
+
+#[deprecated(since="0.2.0", note="please use `adam` instead")]
+fn adam<F: Fn([f64; 7]) -> (f64, [f64; 7])>(step: F, p0: [f64; 7], beta1: f64, beta2: f64, eps: f64, lr: f64, tol: f64) -> [f64; 7] {
+    let mut p = p0;
+    let mut m = [0.0; 7];
+    let mut v = [0.0; 7];
+    let mut t = 0;
+
+    loop {
+        t += 1;
+        let (value, grad) = step(p);
+
+        // Update
+        for i in 0..7 {
+            m[i] = (beta1*m[i]+(1.0-beta1)*grad[i])/(1.0-f64::powi(beta1, t));
+            v[i] = (beta2*v[i]+(1.0-beta2)*grad[i]*grad[i])/(1.0-f64::powi(beta2, t));
+            p[i] -= lr*m[i]/(v[i].sqrt()+eps);
+        }
+        p[0] = p[0].max(0.0001);
+
+        // Logging
+        let grad_norm = (grad[1]*grad[1] + grad[2]*grad[2] + grad[3]*grad[3] + grad[4]*grad[4] + grad[5]*grad[5] + grad[6]*grad[6]).sqrt();
+        
+        // print!("{:?}", lr*m[0]/(v[0].sqrt()+eps));
+        print!("MRSE: {:?}, ", value);
+        print!("|grad f(α, σ)| : {:?}, ", grad_norm);
+        println!("Parameter : {:?}", (p[0], p[1], p[2], p[3], p[4], p[5], p[6]));
+        
+        // Exit
+        if grad_norm < tol {
+            break;
+        }
+    }
+
+    p
+}
+
 pub fn learning(ts: TermStructure, swaption_vol_mkt: [f64; 36], p0: [f64; 7], lr: f64, tol: f64) -> [f64; 7] {
 
     let mut pswaption_mkt = [[0.0; 6]; 6];
@@ -29,9 +96,17 @@ pub fn learning(ts: TermStructure, swaption_vol_mkt: [f64; 36], p0: [f64; 7], lr
         }
     }
 
-    let step = move |alpha, sigma1, sigma2, sigma3, sigma5, sigma7, sigma10| {
+    let step = move |p: [f64; 7]| {
 
         let mut mat: f64;
+        
+        let alpha = p[0];
+        let sigma1 = p[1];
+        let sigma2 = p[2];
+        let sigma3 = p[3];
+        let sigma5 = p[4];
+        let sigma7 = p[5];
+        let sigma10 = p[6];
 
         // 1. Modeling
         // 1.1. Option Maturity 1
@@ -274,7 +349,7 @@ pub fn learning(ts: TermStructure, swaption_vol_mkt: [f64; 36], p0: [f64; 7], lr
 
         // 1.7. Layer 5
         let mut l5_mrse = MRSE::new(pswaption_mkt);
-        let mut l5_mrae = MRAE::new(pswaption_mkt);
+        // let mut l5_mrae = MRAE::new(pswaption_mkt);
 
 
 
@@ -769,7 +844,7 @@ pub fn learning(ts: TermStructure, swaption_vol_mkt: [f64; 36], p0: [f64; 7], lr
         [m10_t1_pswaption, m10_t2_pswaption, m10_t3_pswaption, m10_t5_pswaption, m10_t7_pswaption, m10_t10_pswaption]];
 
         let mrse = l5_mrse.forward(pswaption_hw);
-        let mrae = l5_mrae.forward(pswaption_hw);
+        // let mrae = l5_mrae.forward(pswaption_hw);
         
         
         // 3. Backpropagation
@@ -1184,43 +1259,11 @@ pub fn learning(ts: TermStructure, swaption_vol_mkt: [f64; 36], p0: [f64; 7], lr
         dsigma7 += tmp.5;
         dsigma10 += tmp.6;
         
-        return (mrse, mrae, (dalpha, dsigma1, dsigma2, dsigma3, dsigma5, dsigma7, dsigma10));
+        (mrse, [dalpha, dsigma1, dsigma2, dsigma3, dsigma5, dsigma7, dsigma10])
     };
 
-    let mut alpha = p0[0];
-    let mut sigma1 = p0[1];
-    let mut sigma2 = p0[2];
-    let mut sigma3 = p0[3];
-    let mut sigma5 = p0[4];
-    let mut sigma7 = p0[5];
-    let mut sigma10 = p0[6];
     
-    loop {
-        let (mrse, mrae, (dalpha, dsigma1, dsigma2, dsigma3, dsigma5, dsigma7, dsigma10)) = step(alpha, sigma1, sigma2, sigma3, sigma5, sigma7, sigma10);
-    
-        // Update
-        alpha -= dalpha*lr;
-        alpha = alpha.max(0.0001);
-        sigma1 -= dsigma1*lr;
-        sigma2 -= dsigma2*lr;
-        sigma3 -= dsigma3*lr;
-        sigma5 -= dsigma5*lr;
-        sigma7 -= dsigma7*lr;
-        sigma10 -= dsigma10*lr;
-        
-        // Logging
-        let grad_norm = (dsigma1*dsigma1 + dsigma2*dsigma2 + dsigma3*dsigma3 + dsigma5*dsigma5 + dsigma7*dsigma7 + dsigma10*dsigma10).sqrt();
-        print!("MRSE: {:?}, ", mrse);
-        print!("MRAE: {:?}, ", mrae);
-        print!("|grad f(α, σ)| : {:?}, ", grad_norm);
-        println!("Parameter : {:?}", (alpha, sigma1, sigma2, sigma3, sigma5, sigma7, sigma10));
+    gd(step, p0, lr, tol)
 
-        // Exit
-        if grad_norm < tol {
-            break;
-        }
-
-    }
-
-    [alpha, sigma1, sigma2, sigma3, sigma5, sigma7, sigma10]
+    // adam(step, p0, 0.9, 0.9, 1e-8, 1e-5, 1e-10)
 }

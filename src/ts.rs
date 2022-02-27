@@ -1,3 +1,5 @@
+use crate::linalg::*;
+
 #[derive(Debug, Copy, Clone)]
 pub struct TermStructure {
     pub p: [f64; 241],
@@ -35,7 +37,7 @@ fn ytm_price(t: f64, ytm: f64, freq: f64) -> f64 {
 }
 
 pub fn smith_wilson_ytm(ltfr: f64, alpha: f64, tenor: Vec<f64>, ytm: Vec<f64>, freq: f64) -> TermStructure {
-    let ltfr2 = (1.0+ltfr).ln();
+    let ltfr0 = (1.0+ltfr).ln();
     let n = tenor.len();
     let mut n2: usize;
     let mut t: Vec<f64>;
@@ -107,122 +109,68 @@ pub fn smith_wilson_ytm(ltfr: f64, alpha: f64, tenor: Vec<f64>, ytm: Vec<f64>, f
         m[i] = ytm_price(t[i], ytm[i], freq);
     }
     for i in 0..n2 {
-        u[i] = (-ltfr2*t[i]).exp();
+        u[i] = (-ltfr0*t[i]).exp();
     }
     
     // 3. W
     let mut w = vec![vec![0.0; n2]; n2];
     for i in 0..n2 {
         for j in i..n2 {
-            w[i][j] = (-ltfr2*(t[i]+t[j])).exp()*(alpha*t[i].min(t[j])-(-alpha*t[i].max(t[j])).exp()*(alpha*t[i].min(t[j])).sinh());
+            w[i][j] = (-ltfr0*(t[i]+t[j])).exp()*(alpha*t[i].min(t[j])-(-alpha*t[i].max(t[j])).exp()*(alpha*t[i].min(t[j])).sinh());
             if i != j { w[j][i] = w[i][j]; }
         }
     }
     
     // 4. zeta
-    let mut m_cu = c.map(&u);
+    let mut m_cu = map(&c, &u);
     for i in 0..n {
         m_cu[i] = m[i] - m_cu[i];
     }
-    let zeta = (c.mul(&w).mul(&c.tp())).inv().map(&m_cu);
-    let zeta2 = c.tp().map(&zeta);
+    let zeta = map(&inv(&mul(&mul(&c, &w), &tp(&c))), &m_cu);
+    let zeta2 = map(&tp(&c), &zeta);
+
 
     // output
     let mut p = [0.0; 241];
+    let mut pp = [0.0; 241];
+    let mut f = [0.0; 241];
 
     for i in 0..=240 {
         let tt = (i as f64)/12.0;
-        p[i] = (-ltfr2*tt).exp();
+        p[i] = (-ltfr0*tt).exp();
+        pp[i] = (-ltfr0)*(-ltfr0*tt).exp();
         for j in 0..n2 {
-            p[i] += zeta2[j]*(-ltfr2*(tt+t[j])).exp()*(alpha*tt.min(t[j])-(-alpha*tt.max(t[j])).exp()*(alpha*tt.min(t[j])).sinh());
+            p[i] += zeta2[j]*(-ltfr0*(tt+t[j])).exp()*(alpha*tt.min(t[j])-(-alpha*tt.max(t[j])).exp()*(alpha*tt.min(t[j])).sinh());
+            pp[i] += (-ltfr0)*zeta2[j]*(-ltfr0*(tt+t[j])).exp()*(alpha*tt.min(t[j])-(-alpha*tt.max(t[j])).exp()*(alpha*tt.min(t[j])).sinh());
+            pp[i] += if tt <= t[j] {
+                zeta2[j]*(-ltfr0*(tt+t[j])).exp()*(alpha-alpha*(-alpha*t[j]).exp()*(alpha*tt).cosh())
+            } else {
+                zeta2[j]*(-ltfr0*(tt+t[j])).exp()*(alpha*(-alpha*tt).exp()*(alpha*t[j]).sinh())
+            }
         }
+        f[i] = -pp[i]/p[i];
     }
 
-    TermStructure { p: p, f: [0.0; 241] }
+
+    TermStructure { p: p, f: f }
 }
 
-trait Matrix {
-    fn mul(&self, _rhs: &Vec<Vec<f64>>) -> Vec<Vec<f64>>;
-    fn tp(&self) -> Vec<Vec<f64>>;
-    fn map(&self, _rhs: &Vec<f64>) -> Vec<f64>;
-    fn chol(&self) -> Vec<Vec<f64>>;
-    fn inv(&self) -> Vec<Vec<f64>>;
+fn h(u: f64, v: f64, alpha: f64) -> f64 {
+    alpha*u.min(v) - (-alpha*u.max(v)).exp()*(alpha*u.min(v)).sinh()
 }
 
-impl Matrix for Vec<Vec<f64>> {
-    fn inv(&self) -> Vec<Vec<f64>> {
-        let l = self.chol();
-        let n = l.len();
-        let mut l_inv = vec![vec![0.0; n]; n];
-        for j in 0..n {
-            for i in j..n {
-                if i==j {
-                    l_inv[i][j] = 1.0/l[i][i];
-                } else {
-                    for k in j..i {
-                        l_inv[i][j] -= l[i][k]*l_inv[k][j];
-                    }
-                    l_inv[i][j] /= l[i][i];
-                }
-            }
-        }
-        l_inv.tp().mul(&l_inv)
+fn deriv_h(u: f64, v: f64, alpha: f64) -> f64 {
+    if v<u {
+        alpha-alpha*(-alpha*u).exp()*(alpha*v).cosh()
+    } else {
+        alpha*(-alpha*v).exp()*(alpha*u).sinh()
     }
-    fn chol(&self) -> Vec<Vec<f64>> {
-        let n = self.len();
-        let m = self[0].len();
-        if n != m { panic!("n != m"); }
-        let mut l = vec![vec![0.0; n]; n];
-        let mut sum: f64;
-        for i in 0..n {
-            for j in 0..=i {
-                sum = 0.0;
-                for k in 0..j {
-                    sum += l[i][k]*l[j][k];
-                }
-                if i==j {
-                    l[i][j] = (self[i][i]-sum).sqrt();
-                } else {
-                    l[i][j] = 1.0/l[j][j]*(self[i][j]-sum);
-                }
-            }
-        }
-        l
-    }
-    fn map(&self, _rhs: &Vec<f64>) -> Vec<f64> {
-        let n = self.len();
-        let m = self[0].len();
-        let mut v = vec![0.0; n];
-        for i in 0..n {
-            for j in 0..m {
-                v[i] += self[i][j]*_rhs[j];
-            }
-        }
-        v
-    }
-    fn mul(&self, _rhs: &Vec<Vec<f64>>) -> Vec<Vec<f64>> {
-        let n = self.len();
-        let l = self[0].len();
-        let m = _rhs[0].len();
-        let mut b = vec![vec![0.0; m]; n];
-        for i in 0..n {
-            for j in 0..m {
-                for k in 0..l {
-                    b[i][j] += self[i][k]*_rhs[k][j];
-                }
-            }
-        }
-        b
-    }
-    fn tp(&self) -> Vec<Vec<f64>> {
-        let n = self.len();
-        let m = self[0].len();
-        let mut b = vec![vec![0.0; n]; m];
-        for i in 0..m {
-            for j in 0..n {
-                b[i][j] = self[j][i];
-            }
-        }
-        b
-    }
+}
+
+fn deriv2nd_h(u: f64, v: f64, alpha: f64) -> f64 {
+    alpha*alpha*h(u, v, alpha)-alpha*alpha*alpha*u.min(v)
+}
+
+fn w(u: f64, v: f64, alpha: f64, ltfr0: f64) -> f64 {
+    (-ltfr0*(u+v)).exp()*h(u, v, alpha)
 }

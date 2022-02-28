@@ -19,7 +19,7 @@ fn pswaption_black(mat: f64, tenor: f64, black_vol: f64, ts: TermStructure) -> f
     return term1*(2.0*cum_prob-1.0)/0.25;
 }
 
-fn gd<F: Fn([f64; 7]) -> (f64, [f64; 7])>(step: F, p0: [f64; 7], mut lr: f64, tol: f64) -> [f64; 7] {
+fn gd<F: Fn([f64; 7]) -> (f64, [f64; 7])>(step: F, p0: [f64; 7], lr: f64, tol: f64) -> [f64; 7] {
     let mut p = p0;
     
     loop {
@@ -37,9 +37,11 @@ fn gd<F: Fn([f64; 7]) -> (f64, [f64; 7])>(step: F, p0: [f64; 7], mut lr: f64, to
         
         // Logging
         let grad_norm = (grad[1]*grad[1] + grad[2]*grad[2] + grad[3]*grad[3] + grad[4]*grad[4] + grad[5]*grad[5] + grad[6]*grad[6]).sqrt();
-        print!("MRSE: {:<20}, ", value);
-        println!("|grad f(α, σ)| : {:?}, ", grad_norm);
-        println!("Parameter : {:?}", (p[0], p[1], p[2], p[3], p[4], p[5], p[6]));
+        // print!("MRSE: {:<20}, ", value);
+        // println!("|grad f(α, σ)| : {:?}, ", grad_norm);
+        // println!("Parameter : {:?}", (p[0], p[1], p[2], p[3], p[4], p[5], p[6]));
+        println!("Result : {:?}", (p[0], p[1], p[2], p[3], p[4], p[5], p[6], value, grad_norm));
+
 
         // Exit
         if grad_norm < tol {
@@ -47,42 +49,6 @@ fn gd<F: Fn([f64; 7]) -> (f64, [f64; 7])>(step: F, p0: [f64; 7], mut lr: f64, to
         }
     }
     
-    p
-}
-
-#[deprecated(since="0.2.0", note="please use `adam` instead")]
-fn adam<F: Fn([f64; 7]) -> (f64, [f64; 7])>(step: F, p0: [f64; 7], beta1: f64, beta2: f64, eps: f64, lr: f64, tol: f64) -> [f64; 7] {
-    let mut p = p0;
-    let mut m = [0.0; 7];
-    let mut v = [0.0; 7];
-    let mut t = 0;
-
-    loop {
-        t += 1;
-        let (value, grad) = step(p);
-
-        // Update
-        for i in 0..7 {
-            m[i] = (beta1*m[i]+(1.0-beta1)*grad[i])/(1.0-f64::powi(beta1, t));
-            v[i] = (beta2*v[i]+(1.0-beta2)*grad[i]*grad[i])/(1.0-f64::powi(beta2, t));
-            p[i] -= lr*m[i]/(v[i].sqrt()+eps);
-        }
-        p[0] = p[0].max(0.0001);
-
-        // Logging
-        let grad_norm = (grad[1]*grad[1] + grad[2]*grad[2] + grad[3]*grad[3] + grad[4]*grad[4] + grad[5]*grad[5] + grad[6]*grad[6]).sqrt();
-        
-        // print!("{:?}", lr*m[0]/(v[0].sqrt()+eps));
-        print!("MRSE: {:?}, ", value);
-        print!("|grad f(α, σ)| : {:?}, ", grad_norm);
-        println!("Parameter : {:?}", (p[0], p[1], p[2], p[3], p[4], p[5], p[6]));
-        
-        // Exit
-        if grad_norm < tol {
-            break;
-        }
-    }
-
     p
 }
 
@@ -1264,6 +1230,4 @@ pub fn learning(ts: TermStructure, swaption_vol_mkt: [f64; 36], p0: [f64; 7], lr
 
     
     gd(step, p0, lr, tol)
-
-    // adam(step, p0, 0.9, 0.9, 1e-8, 1e-5, 1e-10)
 }

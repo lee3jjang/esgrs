@@ -42,7 +42,7 @@ fn gd<F: Fn([f64; 8]) -> (f64, [f64; 8])>(step: F, p0: [f64; 8], lr: f64, tol: f
         
         // Logging
         grad_norm = (grad[2]*grad[2] + grad[3]*grad[3] + grad[4]*grad[4] + grad[5]*grad[5] + grad[6]*grad[6] + grad[7]*grad[7]).sqrt();
-        println!("Result : {:?}", (p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], err, grad_norm));
+        // println!("Result : {:?}", (p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], err, grad_norm));
 
         // Exit
         if grad_norm < tol {

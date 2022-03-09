@@ -154,23 +154,3 @@ pub fn smith_wilson_ytm(ltfr: f64, alpha: f64, tenor: Vec<f64>, ytm: Vec<f64>, f
 
     TermStructure { p: p, f: f }
 }
-
-fn h(u: f64, v: f64, alpha: f64) -> f64 {
-    alpha*u.min(v) - (-alpha*u.max(v)).exp()*(alpha*u.min(v)).sinh()
-}
-
-fn deriv_h(u: f64, v: f64, alpha: f64) -> f64 {
-    if v<u {
-        alpha-alpha*(-alpha*u).exp()*(alpha*v).cosh()
-    } else {
-        alpha*(-alpha*v).exp()*(alpha*u).sinh()
-    }
-}
-
-fn deriv2nd_h(u: f64, v: f64, alpha: f64) -> f64 {
-    alpha*alpha*h(u, v, alpha)-alpha*alpha*alpha*u.min(v)
-}
-
-fn w(u: f64, v: f64, alpha: f64, ltfr0: f64) -> f64 {
-    (-ltfr0*(u+v)).exp()*h(u, v, alpha)
-}

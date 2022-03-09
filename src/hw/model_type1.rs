@@ -16,14 +16,17 @@ fn pswaption_black(mat: f64, tenor: f64, black_vol: f64, ts: TermStructure) -> f
     let term1 = ts.p[(12.0*mat) as usize] - ts.p[(12.0*(mat+tenor)) as usize];
     let d1 = 0.5*black_vol*f64::sqrt(mat);
     let cum_prob = norm_cdf(d1);
-    return term1*(2.0*cum_prob-1.0)/0.25;
+    return term1*(2.0*cum_prob-1.0);
 }
 
-fn gd<F: Fn([f64; 7]) -> (f64, [f64; 7])>(step: F, p0: [f64; 7], lr: f64, tol: f64) -> [f64; 7] {
+fn gd<F: Fn([f64; 7]) -> (f64, [f64; 7])>(step: F, p0: [f64; 7], lr: f64, tol: f64) -> ([f64; 7], f64, f64) {
     let mut p = p0;
+    let mut err;
+    let mut grad_norm;
     
     loop {
-        let (value, grad) = step(p);
+        let (err0, grad) = step(p);
+        err = err0;
         
         // Update
         p[0] -= grad[0]*lr;
@@ -36,12 +39,8 @@ fn gd<F: Fn([f64; 7]) -> (f64, [f64; 7])>(step: F, p0: [f64; 7], lr: f64, tol: f
         p[6] -= grad[6]*lr;
         
         // Logging
-        let grad_norm = (grad[1]*grad[1] + grad[2]*grad[2] + grad[3]*grad[3] + grad[4]*grad[4] + grad[5]*grad[5] + grad[6]*grad[6]).sqrt();
-        // print!("MRSE: {:<20}, ", value);
-        // println!("|grad f(α, σ)| : {:?}, ", grad_norm);
-        // println!("Parameter : {:?}", (p[0], p[1], p[2], p[3], p[4], p[5], p[6]));
-        println!("Result : {:?}", (p[0], p[1], p[2], p[3], p[4], p[5], p[6], value, grad_norm));
-
+        grad_norm = (grad[1]*grad[1] + grad[2]*grad[2] + grad[3]*grad[3] + grad[4]*grad[4] + grad[5]*grad[5] + grad[6]*grad[6]).sqrt();
+        println!("Result : {:?}", (p[0], p[1], p[2], p[3], p[4], p[5], p[6], err, grad_norm));
 
         // Exit
         if grad_norm < tol {
@@ -49,10 +48,10 @@ fn gd<F: Fn([f64; 7]) -> (f64, [f64; 7])>(step: F, p0: [f64; 7], lr: f64, tol: f
         }
     }
     
-    p
+    (p, err, grad_norm)
 }
 
-pub fn learning(ts: TermStructure, swaption_vol_mkt: [f64; 36], p0: [f64; 7], lr: f64, tol: f64) -> [f64; 7] {
+pub fn learning(ts: TermStructure, swaption_vol_mkt: [f64; 36], p0: [f64; 7], lr: f64, tol: f64) -> ([f64; 7], f64, f64) {
 
     let mut pswaption_mkt = [[0.0; 6]; 6];
     let mat_tenor = [1.0, 2.0, 3.0, 5.0, 7.0, 10.0];
@@ -1227,7 +1226,6 @@ pub fn learning(ts: TermStructure, swaption_vol_mkt: [f64; 36], p0: [f64; 7], lr
         
         (mrse, [dalpha, dsigma1, dsigma2, dsigma3, dsigma5, dsigma7, dsigma10])
     };
-
     
     gd(step, p0, lr, tol)
 }

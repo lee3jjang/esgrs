@@ -3,6 +3,56 @@ use crate::optim::DiffUniFn;
 use crate::ts::TermStructure;
 use crate::stats::{norm_cdf, norm_pdf};
 
+/// **B2 노드**
+/// 
+/// B2(a1, a2; t1, t2)를 계산하는 노드를 생성합니다.
+/// ```
+#[derive(Debug, Copy, Clone)]
+pub struct B2 {
+    alpha10: f64,
+    alpha20: f64,
+    t1: f64,
+    t2: f64,
+}
+
+impl B2 {
+    pub fn new(t1: f64, t2: f64) -> Self {
+        return B2 { alpha10: f64::NAN, alpha20: f64::NAN, t1: t1, t2: t2 };
+    }
+    pub fn forward(&mut self, alpha10: f64, alpha20: f64) -> f64 {
+        self.alpha10 = alpha10;
+        self.alpha20 = alpha20;
+        let out = if self.t2 < 10. {
+            (1.0-(-alpha10*(self.t2-self.t1)).exp())/alpha10
+        } else {
+            (1.0-(-alpha10*(10.-self.t1)).exp())/alpha10
+          + (-alpha10*(10.-self.t1)).exp()*(1.0-(-alpha20*(self.t2-10.)).exp())/alpha20
+        };
+        return out;
+    }
+    pub fn backward(&self, dout: f64) -> (f64, f64) {
+        let dalpha10;
+        let dalpha20;
+        if self.t2 <= 10. {
+            dalpha10 = (
+               - (1.0-(-self.alpha10*(self.t2-self.t1)).exp())/(self.alpha10*self.alpha10)
+               + (-self.alpha10*(self.t2-self.t1)).exp()/self.alpha10*(self.t2-self.t1)
+            )*dout;
+            dalpha20 = 0.0;
+        } else {
+            dalpha10 = (
+               - (1.0-(-self.alpha10*(10.0-self.t1)).exp())/(self.alpha10*self.alpha10)
+               + (-self.alpha10*(10.0-self.t1)).exp()/self.alpha10*(10.0-self.t1)
+               - (-self.alpha10*(10.0-self.t1)).exp()/self.alpha20*(10.0-self.t1)*(1.0-(-self.alpha20*(self.t2-10.0)).exp())
+            )*dout;
+            dalpha20 = (
+               - self.alpha10*(10.0-self.t1)).exp()*(-(1.0-(-self.alpha20*(self.t2-10.0)).exp())/(self.alpha20*self.alpha20)
+               + (-self.alpha20*(self.t2-10.0)).exp()/self.alpha20*(self.t2-10.0)
+            )*dout;
+        };
+        return (dalpha10, dalpha20);
+    }
+}
 
 /// **B 노드**
 /// 
@@ -1153,35 +1203,35 @@ impl MRSE {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
-pub struct MRAE {
-    pswaption: [[f64; 6]; 6],
-    pswaption_mkt: [[f64; 6]; 6],
-}
+// #[derive(Debug, Copy, Clone)]
+// pub struct MRAE {
+//     pswaption: [[f64; 6]; 6],
+//     pswaption_mkt: [[f64; 6]; 6],
+// }
 
-impl MRAE {
-    pub fn new(pswaption_mkt: [[f64; 6]; 6]) -> Self {
-        MRAE { pswaption: [[f64::NAN; 6]; 6], pswaption_mkt: pswaption_mkt }
-    }
-    pub fn forward(&mut self, pswaption: [[f64; 6]; 6]) -> f64 {
-        self.pswaption = pswaption;
+// impl MRAE {
+//     pub fn new(pswaption_mkt: [[f64; 6]; 6]) -> Self {
+//         MRAE { pswaption: [[f64::NAN; 6]; 6], pswaption_mkt: pswaption_mkt }
+//     }
+//     pub fn forward(&mut self, pswaption: [[f64; 6]; 6]) -> f64 {
+//         self.pswaption = pswaption;
 
-        let mut out = 0.0;
-        for i in 0..6 {
-            for j in 0..6 {
-                out += (pswaption[i][j] - self.pswaption_mkt[i][j]).abs()/self.pswaption_mkt[i][j];
-            }
-        }
-        out /= 36.0;
-        return out;
-    }
-    pub fn backward(&self, dout: f64) -> [[f64; 6]; 6] {
-        let mut dpswaption = [[0.0; 6]; 6];
-        for i in 0..6 {
-            for j in 0..6 {
-                dpswaption[i][j] = if self.pswaption[i][j] >= self.pswaption_mkt[i][j] { dout/self.pswaption_mkt[i][j]/36.0 } else { -dout/self.pswaption_mkt[i][j]/36.0 };
-            }
-        }
-        return dpswaption;
-    }
-}
+//         let mut out = 0.0;
+//         for i in 0..6 {
+//             for j in 0..6 {
+//                 out += (pswaption[i][j] - self.pswaption_mkt[i][j]).abs()/self.pswaption_mkt[i][j];
+//             }
+//         }
+//         out /= 36.0;
+//         return out;
+//     }
+//     pub fn backward(&self, dout: f64) -> [[f64; 6]; 6] {
+//         let mut dpswaption = [[0.0; 6]; 6];
+//         for i in 0..6 {
+//             for j in 0..6 {
+//                 dpswaption[i][j] = if self.pswaption[i][j] >= self.pswaption_mkt[i][j] { dout/self.pswaption_mkt[i][j]/36.0 } else { -dout/self.pswaption_mkt[i][j]/36.0 };
+//             }
+//         }
+//         return dpswaption;
+//     }
+// }

@@ -1,4 +1,5 @@
-fn erf(z: f64) -> f64 {
+pub fn erf(z: f64) -> f64 {
+
     let a1 = 0.254829592;
     let a2 = -0.284496736;
     let a3 = 1.421413741;
@@ -9,10 +10,10 @@ fn erf(z: f64) -> f64 {
 
     //Direct calculation using formula 7.1.26 is absolutely correct
     //But calculation of nth order polynomial takes O(n^2) operations
-    // return 1 - (a1 * t + a2 * t * t + a3 * t * t * t + a4 * t * t * t * t + a5 * t * t * t * t * t) * Math.Exp(-1 * x * x);
+    return 1.0 - (a1 * t + a2 * t * t + a3 * t * t * t + a4 * t * t * t * t + a5 * t * t * t * t * t) * (-z*z).exp();
 
-    //Horner's method, takes O(n) operations for nth order polynomial
-    return 1.0 - ((((((a5 * t + a4) * t) + a3) * t + a2) * t) + a1) * t * (-z*z).exp();
+    // //Horner's method, takes O(n) operations for nth order polynomial
+    // return 1.0 - ((((((a5 * t + a4) * t) + a3) * t + a2) * t) + a1) * t * (-z*z).exp();
 }
 
 pub fn norm_cdf(z: f64) -> f64 {

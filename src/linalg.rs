@@ -16,6 +16,7 @@ pub fn inv(a: &Vec<Vec<f64>>) -> Vec<Vec<f64>> {
     }
     mul(&tp(&l_inv), &l_inv)
 }
+
 pub fn chol(a: &Vec<Vec<f64>>) -> Vec<Vec<f64>> {
     let n = a.len();
     let m = a[0].len();
@@ -37,6 +38,7 @@ pub fn chol(a: &Vec<Vec<f64>>) -> Vec<Vec<f64>> {
     }
     l
 }
+
 pub fn map(a: &Vec<Vec<f64>>, v: &Vec<f64>) -> Vec<f64> {
     let n = a.len();
     let m = a[0].len();
@@ -48,6 +50,7 @@ pub fn map(a: &Vec<Vec<f64>>, v: &Vec<f64>) -> Vec<f64> {
     }
     w
 }
+
 pub fn mul(a: &Vec<Vec<f64>>, b: &Vec<Vec<f64>>) -> Vec<Vec<f64>> {
     let n = a.len();
     let l = a[0].len();
@@ -62,6 +65,7 @@ pub fn mul(a: &Vec<Vec<f64>>, b: &Vec<Vec<f64>>) -> Vec<Vec<f64>> {
     }
     c
 }
+
 pub fn tp(a: &Vec<Vec<f64>>) -> Vec<Vec<f64>> {
     let n = a.len();
     let m = a[0].len();

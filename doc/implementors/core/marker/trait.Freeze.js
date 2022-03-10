@@ -1,4 +1,0 @@
-(function() {var implementors = {};
-implementors["linalg"] = [{"text":"impl Freeze for <a class=\"struct\" href=\"linalg/struct.Vector.html\" title=\"struct linalg::Vector\">Vector</a>","synthetic":true,"types":["linalg::Vector"]}];
-implementors["node"] = [{"text":"impl Freeze for <a class=\"struct\" href=\"node/struct.B.html\" title=\"struct node::B\">B</a>","synthetic":true,"types":["node::B"]},{"text":"impl Freeze for <a class=\"struct\" href=\"node/struct.Vr.html\" title=\"struct node::Vr\">Vr</a>","synthetic":true,"types":["node::Vr"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

@@ -16,7 +16,7 @@ appenders:
     filters:
       - kind: threshold
         level: info
-    path: "logs/info.log"
+    path: "logs/result.log"
     encoder:
       pattern: "[{d(%Y-%m-%d %H:%M:%S)}] {l}:{m}{n}"
 
